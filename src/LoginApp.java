@@ -50,6 +50,8 @@ public class LoginApp {
                     // You can perform authentication logic here
                     // For demonstration purposes, let's just display the input values
                     JOptionPane.showMessageDialog(frame, "Username: " + username + "\nPassword: " + new String(password));
+
+                    // check the SQL shit
                 }
             });
 
@@ -57,6 +59,7 @@ public class LoginApp {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     // Handle create account button click
+                    // need our SQL shit here
                 }
             });
 
@@ -64,6 +67,7 @@ public class LoginApp {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     // Handle manager interface button click
+                    // need ourr SQL shit here
                 }
             });
 
