@@ -60,6 +60,45 @@ public class LoginApp {
                 public void actionPerformed(ActionEvent e) {
                     // Handle create account button click
                     // need our SQL shit here
+                    JFrame createAccountFrame = new JFrame("Create Account");
+                    createAccountFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close only the new window
+                    createAccountFrame.setSize(600, 200);
+                    createAccountFrame.setResizable(false);
+
+                    
+
+                    // Add your account creation components to the new frame
+                    JPanel createAccountPanel = new JPanel();
+                    //createAccountPanel.setLayout(new BoxLayout(createAccountPanel, BoxLayout.Y_AXIS)); // Stack components vertically
+                    createAccountFrame.add(createAccountPanel);
+
+                    JLabel usernameLabel = new JLabel("Username:");
+                    JLabel passwordLabel = new JLabel("Password:");
+
+                    createAccountPanel.add(usernameLabel);
+                    createAccountPanel.add(usernameField);
+                    createAccountPanel.add(passwordLabel);
+                    createAccountPanel.add(passwordField);
+
+                    // Add "Create Account" button
+                    JButton createAccountButtonInternal = new JButton("Create Account");
+                    createAccountButtonInternal.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            // Handle "Create Account" button click
+                            // Perform account creation (SQL or other logic) here
+                            // You can access usernameField.getText() and passwordField.getPassword() to get user input
+                            // ...
+
+                            // Close the "Create Account" window
+                            //do that SQL shit here
+                            createAccountFrame.dispose();
+                        }
+                    });
+
+                    createAccountPanel.add(createAccountButtonInternal);
+
+                    createAccountFrame.setVisible(true);
                 }
             });
 
