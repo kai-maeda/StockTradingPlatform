@@ -47,7 +47,7 @@ public class MainApplication {
             System.out.println("Database username: " + connection.getUserName());
             System.out.println();
 
-            Login.main(args);
+            Login.main2(connection);
 
             
             
