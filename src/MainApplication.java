@@ -11,6 +11,9 @@ import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
 import java.sql.DatabaseMetaData;
 
+// javac -cp lib/ojdbc11.jar src/MainApplication.java src/Login.java -d .
+// java -cp .:lib/ojdbc11.jar MainApplication                           
+
 public class MainApplication {
 
     final static String DB_URL = "jdbc:oracle:thin:@kaidb_tp?TNS_ADMIN=/Users/edwardlavelle/Desktop/Wallet_KaiDB";
