@@ -16,21 +16,8 @@ import java.sql.PreparedStatement;
 
 public class Login {
 
-    public static void main(String[] args) {
-
-    }
     public static void main2(OracleConnection connection) {
 
-        try (Statement statement = connection.createStatement()) {
-            try (
-                ResultSet resultSet = statement.executeQuery(
-                    "INSERT INTO INSTRUCTORS VALUES (3, 'Momin Haider', 'TA')"
-                )
-            ) {}
-        } catch (Exception e) {
-            System.out.println("ERROR: insertion failed.");
-            System.out.println(e);
-        }
         Scanner scanner = new Scanner(System.in);
         
         while (true) {
