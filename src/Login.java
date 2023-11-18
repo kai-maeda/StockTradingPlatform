@@ -12,6 +12,7 @@ import javax.swing.SwingUtilities;
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 
 public class Login {
 
@@ -43,10 +44,10 @@ public class Login {
             
             switch (choice) {
                 case 1:
-                    authenticateUser(scanner);
+                    authenticateUser(scanner, connection);
                     break;
                 case 2:
-                    createAccount(scanner);
+                    createAccount(scanner, connection);
                     break;
                 case 3:
                     System.out.println("Exiting program.");
@@ -58,31 +59,89 @@ public class Login {
         }
     }
 
-    private static void authenticateUser(Scanner scanner) {
-        System.out.print("Enter your username: ");
-        String username = scanner.nextLine();
-        
-        System.out.print("Enter your password: ");
-        String password = scanner.nextLine();
-        
-        // Perform authentication logic here (e.g., check against a database)
-        
-        // Print the username and password to verify
-        System.out.println("Authentication successful!");
-        System.out.println("Username: " + username);
-        System.out.println("Password: " + password);
+    private static void authenticateUser(Scanner scanner, Connection connection) {
+            try {
+                System.out.print("Enter your username: ");
+                String username = scanner.nextLine();
+                System.out.println("Username: " + username);
+    
+                System.out.print("Enter your password: ");
+                String password = scanner.nextLine();
+                System.out.println("Password: " + password);
+    
+                String selectQuery = "SELECT * FROM Customer WHERE username = ? AND password = ?";
+
+                //String selectQuery = "SELECT * FROM Customer WHERE username = 'kevin' AND password = 'lavelle'";
+    
+                try (PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
+                    preparedStatement.setString(1, username);
+                    preparedStatement.setString(2, password);
+
+    
+                    ResultSet resultSet = preparedStatement.executeQuery();
+    
+                    if (resultSet.next()) {
+                        System.out.println("Authentication successful!");
+                        System.out.println("Welcome, " + resultSet.getString("cname") + "!");
+                    } else {
+                        System.out.println("Authentication failed. Please check your username and password.");
+                    }
+                }
+            } catch (SQLException e) {
+                System.out.println("ERROR: Authentication failed.");
+                e.printStackTrace();
+            }
     }
 
-    private static void createAccount(Scanner scanner) {
-        System.out.print("Enter a new username: ");
-        String newUsername = scanner.nextLine();
-        
-        System.out.print("Enter a new password: ");
-        String newPassword = scanner.nextLine();
-        
-        // Perform account creation logic here (e.g., store in a database)
-        
-        // Print a message to indicate success
-        System.out.println("Account created successfully!");
+    private static void createAccount(Scanner scanner, Connection connection) {
+        try {
+            System.out.print("Enter state_id: ");
+            int stateId = scanner.nextInt();
+            scanner.nextLine(); // Consume the newline
+
+            System.out.print("Enter tax_id: ");
+            int taxId = scanner.nextInt();
+            scanner.nextLine(); // Consume the newline
+
+            System.out.print("Enter cname: ");
+            String cname = scanner.nextLine();
+
+            System.out.print("Enter phone: ");
+            String phone = scanner.nextLine();
+
+            System.out.print("Enter email: ");
+            String email = scanner.nextLine();
+
+            System.out.print("Enter username: ");
+            String username = scanner.nextLine();
+
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+
+            String insertQuery = "INSERT INTO Customer (state_id, tax_id, cname, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                preparedStatement.setInt(1, stateId);
+                preparedStatement.setInt(2, taxId);
+                preparedStatement.setString(3, cname);
+                preparedStatement.setString(4, phone);
+                preparedStatement.setString(5, email);
+                preparedStatement.setString(6, username);
+                preparedStatement.setString(7, password);
+
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("Account created successfully!");
+                } else {
+                    System.out.println("Account creation failed.");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Account creation failed.");
+            e.printStackTrace();
+        }
     }
+
+    
 }
+
