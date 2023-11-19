@@ -141,11 +141,12 @@ public class Login {
                 return 0;
             } 
         } catch (SQLException e) {
-            System.out.println("ERROR: username creation field.");
+            System.out.println("ERROR: username creation failed.");
             e.printStackTrace();
         }
         return 1;
     }
 }
+
 
 
