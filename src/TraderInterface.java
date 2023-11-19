@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
+import java.util.Random;
 
 import javax.swing.SwingUtilities;
 
@@ -15,6 +15,7 @@ import javax.swing.SwingUtilities;
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 
 
 public class TraderInterface {
@@ -23,7 +24,9 @@ public class TraderInterface {
 
        Scanner scanner = new Scanner(System.in);
 
+       
 
+        //check if account exists
        while(doesAccountExist(connection, tax_id) == false){
            System.out.println(
            "Account does not exist. Please create an account by typing Deposit and a balance greater than $1000");
@@ -38,7 +41,14 @@ public class TraderInterface {
             try {
                 double amount = Double.parseDouble(inputWords[1]);
                 if (amount >= 1000) {
+
                     // Deposit logic here
+                    //create account
+                    //create market account with amount 
+
+                    int acc_id = createAccount_Has(tax_id, connection);
+                    createMarketAccount(amount, acc_id, tax_id, connection);
+                    
                     System.out.println("Successfully deposited $" + amount + ".");
                     // You can add code to perform the deposit operation
                     break; // Exit the loop after successful deposit
@@ -52,6 +62,9 @@ public class TraderInterface {
             System.out.println("Invalid input format. Please enter a valid deposit command.");
         }
        }
+
+         //get account id
+        int accountId = getAccountId(tax_id, connection);
 
 
       
@@ -79,7 +92,7 @@ public class TraderInterface {
 
            switch (choice) {
                case 1:
-                   deposit(scanner);
+                   deposit(scanner, connection, accountId);
                    break;
                case 2:
                    withdraw();
@@ -94,7 +107,7 @@ public class TraderInterface {
                    cancel();
                    break;
                case 6:
-                   showBalance();
+                   showBalance(connection, accountId);
                    break;
                case 7:
                    showTransactionHistory();
@@ -119,7 +132,75 @@ public class TraderInterface {
    }
 
 
-   private static void deposit(Scanner scanner) {
+   public static int getAccountId(int taxId, Connection connection) {
+    int accountId = -1;
+    String selectQuery = "SELECT acc_id FROM Account_Has WHERE tax_id = " + Integer.toString(taxId);
+    try (Statement statement = connection.createStatement()) {
+        ResultSet resultSet = statement.executeQuery(selectQuery);
+        if (resultSet.next()) {
+            accountId = resultSet.getInt("acc_id");
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return accountId;
+   }
+
+
+
+
+private static int createAccount_Has(int tax_id, OracleConnection connection){
+    Random random = new Random();
+    int acc_id = random.nextInt(Integer.MAX_VALUE);
+    System.out.println("Generated Primary Key: " + acc_id);
+    String insertQuery = "INSERT INTO Account_Has (acc_id, tax_id) VALUES (?, ?)";
+
+    try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                preparedStatement.setInt(1, acc_id);
+                preparedStatement.setInt(2, tax_id);
+
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("Account created successfully!");
+                } else {
+                    System.out.println("Account creation failed.");
+                }
+            }
+            catch (SQLException e) {
+                System.out.println("ERROR: Account creation failed.");
+                e.printStackTrace();
+            }
+    
+
+    return(acc_id);
+}
+
+private static void createMarketAccount(double amount, int acc_id, int tax_id, OracleConnection connection){
+    //create account
+    //Random random = new Random();
+    //int acc_id = random.nextInt(Integer.MAX_VALUE);
+    //System.out.println("Generated Primary Key: " + acc_id);
+    String insertQuery = "INSERT INTO Market_Account (Balance, acc_id, tax_id) VALUES (?, ?, ?)";
+
+    try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                preparedStatement.setDouble(1, amount);
+                preparedStatement.setInt(2, acc_id);
+                preparedStatement.setInt(3, tax_id);
+
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("Account created successfully!");
+                } else {
+                    System.out.println("Account creation failed.");
+                }
+            }
+            catch (SQLException e) {
+                System.out.println("ERROR: Account creation failed.");
+                e.printStackTrace();
+            }
+}
+
+private static void deposit(Scanner scanner, OracleConnection connection, int accountId) {
     System.out.println("Deposit option selected.");
     while (true) {
         System.out.println("Please enter the amount you would like to deposit as a decimal number: ");
@@ -127,6 +208,7 @@ public class TraderInterface {
             double amount = scanner.nextDouble();
             // Process the valid double input (amount) here
             System.out.println("You entered: " + amount);
+            depositSQL(amount, connection, accountId);
             break; // Exit the loop since valid input was provided
         } else {
             System.out.println("Invalid input. Please enter a valid decimal number.");
@@ -134,6 +216,28 @@ public class TraderInterface {
         }
     }
     // Continue with your deposit logic here using the valid amount.
+}
+
+private static void depositSQL(double amount, OracleConnection connection, int accountId){
+    
+    String insertQuery = "UPDATE Market_Account SET Balance = Balance + ? WHERE acc_id = ?";
+
+    try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                preparedStatement.setDouble(1, amount);
+                preparedStatement.setInt(2, accountId);
+
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("Deposit successful!");
+                } else {
+                    System.out.println("Deposit failed.");
+                }
+            }
+            catch (SQLException e) {
+                System.out.println("ERROR: Deposit failed.");
+                e.printStackTrace();
+            }
+            
 }
 
 
@@ -161,9 +265,24 @@ public class TraderInterface {
    }
 
 
-   private static void showBalance() {
+   private static void showBalance(OracleConnection connection, int acc_id) {
        // Implement show balance logic
        System.out.println("Show Balance option selected.");
+       System.out.println("Your current balance is: " + getBalance(connection, acc_id));
+   }
+
+   private static double getBalance(OracleConnection connection, int acc_id){
+         double balance = 0.0;
+    String selectQuery = "SELECT balance FROM Market_Account WHERE acc_id = " + Integer.toString(acc_id);
+    try (Statement statement = connection.createStatement()) {
+        ResultSet resultSet = statement.executeQuery(selectQuery);
+        if (resultSet.next()) {
+            balance = resultSet.getInt("balance");
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return balance;
    }
 
 

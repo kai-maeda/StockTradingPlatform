@@ -82,8 +82,7 @@ public class Login {
     private static void createAccount(Scanner scanner, Connection connection) {
         try {
             System.out.print("Enter state_id: ");
-            int stateId = scanner.nextInt();
-            scanner.nextLine(); // Consume the newline
+            String stateId = scanner.nextLine();
 
             System.out.print("Enter tax_id: ");
             int taxId = scanner.nextInt();
@@ -112,7 +111,7 @@ public class Login {
             String insertQuery = "INSERT INTO Customer (state_id, tax_id, cname, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?, ?)";
             
             try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-                preparedStatement.setInt(1, stateId);
+                preparedStatement.setString(1, stateId);
                 preparedStatement.setInt(2, taxId);
                 preparedStatement.setString(3, cname);
                 preparedStatement.setString(4, phone);
