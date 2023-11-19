@@ -46,7 +46,7 @@ public class Login {
         }
     }
 
-    private static void authenticateUser(Scanner scanner, Connection connection) {
+    private static void authenticateUser(Scanner scanner, OracleConnection connection) {
             try {
                 System.out.print("Enter your username: ");
                 String username = scanner.nextLine();
@@ -56,20 +56,23 @@ public class Login {
                 String password = scanner.nextLine();
                 System.out.println("Password: " + password);
     
-                String selectQuery = "SELECT * FROM Customer WHERE username = ? AND password = ?";
+                //String selectQuery = "SELECT * FROM Customer WHERE username = ? AND password = ?";
 
                 //String selectQuery = "SELECT * FROM Customer WHERE username = 'kevin' AND password = 'lavelle'";
+
+                String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'" + " AND password = " + "'" + password + "'";
     
-                try (PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
-                    preparedStatement.setString(1, username);
-                    preparedStatement.setString(2, password);
+                try (Statement statement = connection.createStatement()) {
 
     
-                    ResultSet resultSet = preparedStatement.executeQuery();
+                    ResultSet resultSet = statement.executeQuery(
+                        selectQuery
+                    );
     
                     if (resultSet.next()) {
                         System.out.println("Authentication successful!");
                         System.out.println("Welcome, " + resultSet.getString("cname") + "!");
+                        TraderInterface.main2(connection, resultSet.getInt("tax_id"));
                     } else {
                         System.out.println("Authentication failed. Please check your username and password.");
                     }
@@ -131,4 +134,3 @@ public class Login {
 
     
 }
-
