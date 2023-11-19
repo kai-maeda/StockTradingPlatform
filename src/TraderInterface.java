@@ -133,7 +133,7 @@ public class TraderInterface {
 
 
    public static int getAccountId(int taxId, Connection connection) {
-    int accountId = -1;
+    int accountId = 0;
     String selectQuery = "SELECT acc_id FROM Account_Has WHERE tax_id = " + Integer.toString(taxId);
     try (Statement statement = connection.createStatement()) {
         ResultSet resultSet = statement.executeQuery(selectQuery);
@@ -143,6 +143,7 @@ public class TraderInterface {
     } catch (SQLException e) {
         e.printStackTrace();
     }
+    // System.out.println(accountId);
     return accountId;
    }
 

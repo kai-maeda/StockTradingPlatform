@@ -25,13 +25,13 @@ at whatever the current price for that stock is.
 ADMINISTRATOR (MANAGER/employees)
 =============
 
-Name,username,password,STATE,Phone,email,TAXID
+cname,username,password,state_id,phone,email,tax_id
 John Admin,admin,secret,CA,(805)6374632,admin@stock.com,1000
 
 CUSTOMERS  
 =========
 
-Name,username,password,STATE,Phone,email,TAXID
+cname,username,password,state_id,phone,email,tax_id
 Alfred Hitchcock,alfred,hi,CA,(805)2574499,alfred@hotmail.com,1022
 Billy Clinton,billy,cl,CA,(805)5629999,billy@yahoo.com,3045
 Cindy Laugher,cindy,la,CA,(805)6930011,cindy@hotmail.com,2034
@@ -44,11 +44,27 @@ Magic Jordon,magic,jo,NJ,(805)4535539,jordon@jordon.org,3455
 Olive Stoner,olive,st,CA,(805)2574499,olive@yahoo.com,1123
 Frank Olson,frank,ol,CA,(805)3456789,frank@gmail.com,3306
 
+MARKET ACCOUNT INFORMATION
+===============
+
+tax_id,acc_id,balance
+1022,001,10000
+3045,002,100000
+2034,003,50000
+4093,004,45000
+1234,005,200000
+8956,006,5000
+2341,007,2000
+0456,008,10000
+3455,009,130200
+1123,010,35000
+3306,011,30500
+
 
 STOCK OWNERSHIP INFORMATION
 ==============
 
-TAXID,#OFSHARES(10/16/2023),ACTORID(STOCKID)
+tax_id,num_share,symbol
 1022,100,SKB
 3045,500,SMD
 3045,100,STC
@@ -70,27 +86,12 @@ TAXID,#OFSHARES(10/16/2023),ACTORID(STOCKID)
 3306,200,STC
 3306,100,SMD
 
-MARKET ACCOUNT INFORMATION
-===============
-
-TAXID,MARKETACCOUNTID,BALANCE($)
-1022,001,10000
-3045,002,100000
-2034,003,50000
-4093,004,45000
-1234,005,200000
-8956,006,5000
-2341,007,2000
-0456,008,10000
-3455,009,130200
-1123,010,35000
-3306,011,30500
-
 ACTORS-STOCK-INFO
 =================
 
-ACTORID(STOCKID),CURRENTPRICE(10/16/2023),NAME,DOB,MovieTitle,Role,Year,Contract
+symbol,current_price,actor_name,date_of_birth,title,actor_role,movie_year,monetary_value
 SKB,40.00,Kim Basinger,8 December 1958,L.A. Confidential,Actor,1997,5000000
 SMD,71.00,Michael Douglas,25 September 1944,A Perfect Murder,Actor,1998,10000000
 STC,32.50,Tom Cruise,3 July 1962,Jerry Maguire,Actor,1996,5000000
+
 
