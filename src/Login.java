@@ -55,10 +55,6 @@ public class Login {
                 System.out.print("Enter your password: ");
                 String password = scanner.nextLine();
                 System.out.println("Password: " + password);
-    
-                //String selectQuery = "SELECT * FROM Customer WHERE username = ? AND password = ?";
-
-                //String selectQuery = "SELECT * FROM Customer WHERE username = 'kevin' AND password = 'lavelle'";
 
                 String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'" + " AND password = " + "'" + password + "'";
     
@@ -103,7 +99,12 @@ public class Login {
             String email = scanner.nextLine();
 
             System.out.print("Enter username: ");
-            String username = scanner.nextLine();
+            String username = scanner.nextLine(); 
+            while(true) {
+                if(uniqueUser(connection, username) > 0) break;
+                System.out.print("Enter username: ");
+                username = scanner.nextLine();
+            }
 
             System.out.print("Enter password: ");
             String password = scanner.nextLine();
@@ -130,7 +131,21 @@ public class Login {
             System.out.println("ERROR: Account creation failed.");
             e.printStackTrace();
         }
+    }    
+    private static int uniqueUser(Connection connection, String username) {
+        String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'";
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if (resultSet.next()) {
+                System.out.println("Username already exists, please choose a new one.");
+                return 0;
+            } 
+        } catch (SQLException e) {
+            System.out.println("ERROR: username creation field.");
+            e.printStackTrace();
+        }
+        return 1;
     }
-
-    
 }
+
+
