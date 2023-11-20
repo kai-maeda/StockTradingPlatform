@@ -52,7 +52,7 @@ public class MainApplication {
             System.out.println("Database username: " + connection.getUserName());
             System.out.println();
 
-            Login.main2(connection);
+            StartupOptions.main2(connection);
 
             
             

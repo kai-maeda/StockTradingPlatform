@@ -14,6 +14,7 @@ import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
+import java.sql.Date;
 
 public class TraderInterface {
     public static void main2(OracleConnection connection, int tax_id) {
@@ -86,7 +87,7 @@ public class TraderInterface {
                     withdraw(scanner, connection, accountId);
                     break;
                 case 3:
-                    buy(connection, scanner, accountId);
+                    buy(connection, scanner, accountId, tax_id);
                     break;
                 case 4:
                     sell();
@@ -134,8 +135,23 @@ public class TraderInterface {
     }
 
     private static int createAccount_Has(int tax_id, OracleConnection connection) {
-        Random random = new Random();
-        int acc_id = random.nextInt(Integer.MAX_VALUE);
+        int acc_id = 0;
+        while(true){
+            Random random = new Random();
+            acc_id = random.nextInt(Integer.MAX_VALUE);
+            String selectQuery = "SELECT * FROM Account_Has WHERE acc_id = " + Integer.toString(acc_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
         System.out.println("Generated Primary Key: " + acc_id);
         String insertQuery = "INSERT INTO Account_Has (acc_id, tax_id) VALUES (?, ?)";
 
@@ -171,12 +187,12 @@ public class TraderInterface {
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Account created successfully!");
+                System.out.println("Market Account created successfully!");
             } else {
-                System.out.println("Account creation failed.");
+                System.out.println("Market Account creation failed.");
             }
         } catch (SQLException e) {
-            System.out.println("ERROR: Account creation failed.");
+            System.out.println("ERROR: Market Account creation failed.");
             e.printStackTrace();
         }
     }
@@ -279,7 +295,7 @@ public class TraderInterface {
         return -1.0;
     }
 
-    private static void buy(OracleConnection connection, Scanner scanner, int acc_id) {
+    private static void buy(OracleConnection connection, Scanner scanner, int acc_id, int tax_id) {
         // Implement buy logic
         
         System.out.println("Buy option selected.");
@@ -312,13 +328,63 @@ public class TraderInterface {
             else {
                 //withdraw the money 
                 withdrawSQL(totalCost, connection, acc_id);
-                //add the stock to a stock account
+                String selectQuery = "SELECT balance_share FROM Stock_Account WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+                try (Statement statement = connection.createStatement()) {
+                    ResultSet resultSet = statement.executeQuery(selectQuery);
+                    if (!resultSet.next()) {
+                        createStockAccount(connection, scanner, tax_id, acc_id, symbol);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                //String updateQuery = "UPDATE Stock_Account SET num_share = num_share + ?, balance_share = balance_share + ? WHERE tax_id = ? AND symbol = ?";
+                String updateQuery = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(numShares) + ", balance_share = balance_share + " + Double.toString(totalCost) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+                try (Statement statement = connection.createStatement()) {
+                    //preparedStatement.setInt(1, numShares);
+                    //preparedStatement.setDouble(2, totalCost);
+                    //preparedStatement.setInt(3, tax_id);
+                    //preparedStatement.setString(4, symbol);
+        
+                    int rowsAffected = statement.executeUpdate(updateQuery);
+                    if (rowsAffected > 0) {
+                        System.out.println("Added to Stock Account successful!");
+                    } else {
+                        System.out.println("Purchase failed.");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("ERROR: Purchase failed.");
+                    e.printStackTrace();
+                }
+
             }
         }
         else{
             System.out.println("Stock does not exist.");
         }
-} 
+}
+
+    private static void createStockAccount(OracleConnection connection, Scanner scanner, int tax_id, int acc_id, String symbol){
+        String insertQuery = "INSERT INTO Stock_Account (acc_id, symbol, num_share, balance_share, tax_id) VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setDouble(1, acc_id);
+            preparedStatement.setString(2, symbol);
+            preparedStatement.setInt(3, 0);
+            preparedStatement.setDouble(4, 0.0);
+            preparedStatement.setInt(5, tax_id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Stock Account created successfully!");
+            } else {
+                System.out.println("Stock Account creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Stock Account creation failed.");
+            e.printStackTrace();
+        }
+
+    }
         
 
     private static void sell() {
@@ -349,6 +415,45 @@ public class TraderInterface {
             e.printStackTrace();
         }
         return balance;
+    }
+
+    private static int createTransaction(OracleConnection connection){
+        int transaction_id = 0;
+        while(true){
+            Random random = new Random();
+            transaction_id = random.nextInt(Integer.MAX_VALUE);
+            String selectQuery = "SELECT * FROM Transactions WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("Generated Transaction Key: " + transaction_id);
+        String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
+
+        Date date = new Date(System.currentTimeMillis());
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setInt(1, transaction_id);
+            preparedStatement.setDate(2, date);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Transaction created successfully!");
+            } else {
+                System.out.println("Transaction creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Transaction Account creation failed.");
+            e.printStackTrace();
+        }
+        return(transaction_id);
     }
 
     private static void showTransactionHistory() {
