@@ -4,9 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import javax.swing.SwingUtilities;
-
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
 import java.sql.DatabaseMetaData;
@@ -52,18 +55,37 @@ public class MainApplication {
             System.out.println("Database username: " + connection.getUserName());
             System.out.println();
 
+            setDate(connection);
+            int tax_id = 1000;
+            ManagerInterface.parentFunction(connection, tax_id);
             DataInput.main3(connection);
             Login.main2(connection);
-
             
             
         } catch (SQLException e) {
             e.printStackTrace();
             // Handle database connection error gracefully
         }
-
-        
-  
+    }
+    
+    public static void setDate(OracleConnection connection) {
+        String insertQuery = "INSERT INTO Current_Time (curr_date) VALUES (?)";
+        String current_date = "2023-10-16";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            java.util.Date customDate = sdf.parse(current_date);
+            Date sqlDate = new Date(customDate.getTime());
+            String selectQuery = "SELECT * FROM Current_Time WHERE curr_date = TO_DATE(" + "'" + current_date + "', 'YYYY-MM-DD')";
+            try(Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if(!resultSet.next()) {
+                    try(PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                        preparedStatement.setDate(1,sqlDate);
+                        preparedStatement.executeUpdate();
+                    }
+                } 
+            } catch (SQLException e) {e.printStackTrace();}
+        } catch (ParseException e) {e.printStackTrace();}
     }
 
 }

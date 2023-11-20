@@ -66,10 +66,6 @@ public class TraderInterface {
          //get account id
         int accountId = getAccountId(tax_id, connection);
 
-
-      
-
-
        while (true) {
            System.out.println("Trader Interface Options:");
            System.out.println("1. Deposit");
