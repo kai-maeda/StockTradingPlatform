@@ -39,6 +39,7 @@ public class StartupOptions {
                 break;
             case 3:
                 System.out.println("You selected Demo.");
+                Demo.initalizeInterface(connection, scanner);
                 // Add your demo logic here
                 break;
             default:
