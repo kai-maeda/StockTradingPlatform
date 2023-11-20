@@ -266,33 +266,60 @@ public class TraderInterface {
         }
     }
 
-    private static ResultSet getStock(OracleConnection connection, String symbol) {
+    private static double getStockPrice(OracleConnection connection, String symbol) {
         String selectQuery = "SELECT * FROM Stock_Actor WHERE symbol = " + "'" + symbol + "'";
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
-            return resultSet;
+            if(resultSet.next()) {
+                return resultSet.getDouble("current_price");
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
+            return(-1.0);
         }
-        return null;
+        return -1.0;
     }
 
     private static void buy(OracleConnection connection, Scanner scanner, int acc_id) {
         // Implement buy logic
-        /* 
+        
         System.out.println("Buy option selected.");
         System.out.println("Type symbol of stock you would like to purchase.");
         String symbol = scanner.nextLine();
-        ResultSet stockResultSet = getStock(connection, symbol);
-        if(!stockResultSet.next()) {
-            System.out.println("Stock does not exist.");
-            return;
+        double stockPrice = getStockPrice(connection, symbol);
+        if(stockPrice != -1.0) {
+            System.out.println("Stock exists.");
+            System.out.println("Type amount of stock you would like to purchase.");
+            int numShares = 0;
+            while (true) {
+                System.out.print("Type the amount of stock you wish to purchase: ");
+                try {
+                    numShares = Integer.parseInt(scanner.nextLine());
+                    break;  // Exit the loop if the input is a valid integer
+                } catch (NumberFormatException e) {
+                    System.out.println("Please enter a valid integer. Try again.");
+                }
+            }
+            if(numShares <= 0) {
+                System.out.println("Invalid input. Number of shares must be greater than zero.");
+                return;
+            }
+            double totalCost = stockPrice * numShares;
+            double balance = getBalance(connection, acc_id);
+            if(totalCost >= balance) {
+                System.out.println("Insufficient funds. Your current balance is: " + balance);
+                return;
+            }
+            else {
+                //withdraw the money 
+                withdrawSQL(totalCost, connection, acc_id);
+                //add the stock to a stock account
+            }
         }
         else{
-            System.out.println("Stock exists.");
+            System.out.println("Stock does not exist.");
         }
-        */
-    }
+} 
+        
 
     private static void sell() {
         // Implement sell logic
