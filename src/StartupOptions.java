@@ -1,0 +1,49 @@
+import java.util.Scanner;
+
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
+
+import javax.swing.SwingUtilities;
+
+import oracle.jdbc.pool.OracleDataSource;
+import oracle.jdbc.OracleConnection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+
+public class StartupOptions {
+    public static void main2(OracleConnection connection) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Welcome to the Startup Options:");
+        System.out.println("1. Customer Interface");
+        System.out.println("2. Manager Interface");
+        System.out.println("3. Demo");
+        System.out.println("Please select an option (1/2/3):");
+
+        int option = scanner.nextInt();
+
+        switch (option) {
+            case 1:
+                System.out.println("You selected Customer Interface.");
+                Login.main2(connection, 1);
+                // Add your customer interface logic here
+                break;
+            case 2:
+                System.out.println("You selected Manager Interface.");
+                // Add your manager interface logic here
+                break;
+            case 3:
+                System.out.println("You selected Demo.");
+                // Add your demo logic here
+                break;
+            default:
+                System.out.println("Invalid option. Please select a valid option (1/2/3).");
+        }
+
+        scanner.close();
+    }
+}
