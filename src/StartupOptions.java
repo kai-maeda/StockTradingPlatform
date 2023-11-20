@@ -26,6 +26,8 @@ public class StartupOptions {
 
         int option = scanner.nextInt();
 
+        //scanner.nextLine(); // Consume the newline
+
         switch (option) {
             case 1:
                 System.out.println("You selected Customer Interface.");

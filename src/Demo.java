@@ -40,6 +40,7 @@ public class Demo {
             System.out.println("1. Open Market");
             System.out.println("2. Close Market");
             System.out.println("3. Go to Next Day");
+            System.out.println("4. Change Stock Price");
 
             System.out.print("Enter your choice (1-3): ");
 
@@ -50,7 +51,7 @@ public class Demo {
                     System.out.print("Enter your choice (1-3): ");
                     choice = scanner.nextInt();
 
-                    if (choice >= 1 && choice <= 3) {
+                    if (choice >= 1 && choice <= 4) {
                         break; // Valid input, exit the loop
                     } else {
                         System.out.println("Invalid input. Please enter a number between 1 and 3.");
@@ -62,6 +63,8 @@ public class Demo {
                 }
             }
 
+            scanner.nextLine();
+
             switch (choice) {
                 case 1:
                     openMarket(connection);
@@ -71,6 +74,9 @@ public class Demo {
                     break;
                 case 3:
                     goToNextDay(connection);
+                    break;
+                case 4: 
+                    promptChangeStockPrice(connection, scanner);
                     break;
                 default:
                     System.out.println("Invalid input. Please enter a number between 1 and 3.");
@@ -188,6 +194,53 @@ public class Demo {
                 e.printStackTrace();
             }
         } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void promptChangeStockPrice(OracleConnection connection, Scanner scanner){
+        System.out.println("Enter the symbol of the stock you want to change the price of: ");
+        String symbol = scanner.nextLine();
+        if(TraderInterface.getStockPrice(connection, symbol) == -1){
+            System.out.println("Stock does not exist.");
+            return;
+        }
+        double price = 0;
+        while (true) {
+                try {
+                    System.out.println("Enter the new price of the stock: ");
+                    double choice = scanner.nextInt();
+
+                    if (choice > 0) {
+                        break; // Valid input, exit the loop
+                    } else {
+                        System.out.println("Invalid input. Please enter a number greater than zero.");
+                    }
+                } catch (java.util.InputMismatchException e) {
+                    // Handle non-integer input
+                    System.out.println("Invalid input. Please enter a number greater than zero.");
+                    scanner.nextLine(); // Consume the invalid input
+                }
+            }
+        scanner.nextLine();
+        changeStockPrice(connection, scanner, price, symbol);
+    }
+
+    private static void changeStockPrice(OracleConnection connection, Scanner scanner, double price, String symbol) {
+
+
+        String updateQuery = "UPDATE Stock_Actor SET current_price = " + Double.toString(price) + " WHERE symbol = '" + symbol + "'";
+
+        try (Statement statement = connection.createStatement()) {
+
+            int rowsAffected = statement.executeUpdate(updateQuery);
+            if (rowsAffected > 0) {
+                System.out.println("Change Stock Price Successful");
+            } else {
+                System.out.println("Change Stock Price Failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Change Stock Price Failed.");
             e.printStackTrace();
         }
     }

@@ -282,7 +282,7 @@ public class TraderInterface {
         }
     }
 
-    private static double getStockPrice(OracleConnection connection, String symbol) {
+    public static double getStockPrice(OracleConnection connection, String symbol) {
         String selectQuery = "SELECT * FROM Stock_Actor WHERE symbol = " + "'" + symbol + "'";
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
