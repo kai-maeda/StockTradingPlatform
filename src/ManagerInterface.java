@@ -49,7 +49,7 @@ public class ManagerInterface {
                     generateDTER();
                     break;
                 case 5:
-                    customerReport();
+                    //customerReport();
                     break;
                 case 6:
                     deleteTransactions();
@@ -88,8 +88,9 @@ public class ManagerInterface {
     public static void generateDTER() {
         //
     }    
+
     public static void customerReport(OracleConnection connection) {
-        String selectQuery
+        //String selectQuery
     }    
     public static void deleteTransactions() {
         //

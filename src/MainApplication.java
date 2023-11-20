@@ -14,7 +14,7 @@ import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
 import java.sql.DatabaseMetaData;
 
-// javac -cp lib/ojdbc11.jar src/MainApplication.java src/Login.java src/TraderInterface.java -d .
+// javac -cp lib/ojdbc11.jar src/MainApplication.java src/Login.java src/DataInput.java src/StartupOptions.java src/TraderInterface.java src/ManagerInterface.java -d .
 // java -cp .:lib/ojdbc11.jar MainApplication                           
 
 public class MainApplication {
@@ -56,8 +56,8 @@ public class MainApplication {
             System.out.println();
 
             setDate(connection);
-            int tax_id = 1000;
-            ManagerInterface.parentFunction(connection, tax_id);
+            //int tax_id = 1000;
+            //ManagerInterface.parentFunction(connection, tax_id);
             DataInput.main3(connection);
             StartupOptions.main2(connection);
 

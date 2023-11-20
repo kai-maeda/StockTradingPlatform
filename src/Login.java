@@ -81,6 +81,38 @@ public class Login {
                 e.printStackTrace();
             }
         }
+        else{
+            try {
+                System.out.print("Enter your username: ");
+                String username = scanner.nextLine();
+                System.out.println("Username: " + username);
+    
+                System.out.print("Enter your password: ");
+                String password = scanner.nextLine();
+                System.out.println("Password: " + password);
+
+                String selectQuery = "SELECT * FROM Manager WHERE username = " + "'" + username + "'" + " AND password = " + "'" + password + "'";
+    
+                try (Statement statement = connection.createStatement()) {
+
+    
+                    ResultSet resultSet = statement.executeQuery(
+                        selectQuery
+                    );
+    
+                    if (resultSet.next()) {
+                        System.out.println("Authentication successful!");
+                        System.out.println("Welcome, " + resultSet.getString("cname") + "!");
+                        TraderInterface.main2(connection, resultSet.getInt("tax_id"));
+                    } else {
+                        System.out.println("Authentication failed. Please check your username and password.");
+                    }
+                }
+            } catch (SQLException e) {
+                System.out.println("ERROR: Authentication failed.");
+                e.printStackTrace();
+            }
+        }
     }
 
     private static void createAccount(Scanner scanner, Connection connection, int option) {
@@ -136,8 +168,75 @@ public class Login {
             e.printStackTrace();
         }
     }
+    else{
+        try {
+            System.out.print("Enter state_id: ");
+            String stateId = scanner.nextLine();
+
+            System.out.print("Enter tax_id: ");
+            int taxId = scanner.nextInt();
+            scanner.nextLine(); // Consume the newline
+
+            System.out.print("Enter cname: ");
+            String cname = scanner.nextLine();
+
+            System.out.print("Enter phone: ");
+            String phone = scanner.nextLine();
+
+            System.out.print("Enter email: ");
+            String email = scanner.nextLine();
+
+            System.out.print("Enter username: ");
+            String username = scanner.nextLine(); 
+            while(true) {
+                if(uniqueManager(connection, username) > 0) break;
+                System.out.print("Enter username: ");
+                username = scanner.nextLine();
+            }
+
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+
+            String insertQuery = "INSERT INTO Manager (state_id, tax_id, cname, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                preparedStatement.setString(1, stateId);
+                preparedStatement.setInt(2, taxId);
+                preparedStatement.setString(3, cname);
+                preparedStatement.setString(4, phone);
+                preparedStatement.setString(5, email);
+                preparedStatement.setString(6, username);
+                preparedStatement.setString(7, password);
+
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("Account created successfully!");
+                } else {
+                    System.out.println("Account creation failed.");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Account creation failed.");
+            e.printStackTrace();
+        }
+    }
     }    
     private static int uniqueCustomer(Connection connection, String username) {
+        String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'";
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if (resultSet.next()) {
+                System.out.println("Username already exists, please choose a new one.");
+                return 0;
+            } 
+        } catch (SQLException e) {
+            System.out.println("ERROR: username creation failed.");
+            e.printStackTrace();
+        }
+        return 1;
+    }
+
+    private static int uniqueManager(Connection connection, String username) {
         String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'";
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);

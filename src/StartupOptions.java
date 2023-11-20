@@ -34,6 +34,7 @@ public class StartupOptions {
                 break;
             case 2:
                 System.out.println("You selected Manager Interface.");
+                Login.main2(connection, 2);
                 // Add your manager interface logic here
                 break;
             case 3:
