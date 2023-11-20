@@ -355,6 +355,7 @@ public class TraderInterface {
                     System.out.println("ERROR: Purchase failed.");
                     e.printStackTrace();
                 }
+                createBuyTransaction(connection, numShares, symbol, stockPrice, new Date(System.currentTimeMillis()));
 
             }
         }
@@ -415,6 +416,29 @@ public class TraderInterface {
             e.printStackTrace();
         }
         return balance;
+    }
+
+    private static void createBuyTransaction(OracleConnection connection, int numShares, String symbol, double price, Date date){
+        String insertQuery = "INSERT INTO Buy (tid, shares, buy_price, symbol) VALUES (?, ?, ?, ?)";
+
+        int transaction_id = createTransaction(connection);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setDouble(1, transaction_id);
+            preparedStatement.setInt(2, numShares);
+            preparedStatement.setDouble(3, price);
+            preparedStatement.setString(4, symbol);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Buy Transaction created successfully!");
+            } else {
+                System.out.println("Buy Transaction creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Buy Transaction creation failed.");
+            e.printStackTrace();
+        }
     }
 
     private static int createTransaction(OracleConnection connection){
