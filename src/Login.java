@@ -16,7 +16,9 @@ import java.sql.PreparedStatement;
 
 public class Login {
 
-    public static void main2(OracleConnection connection) {
+
+    //option 1 is customer interface, option 2 is manager interface
+    public static void main2(OracleConnection connection, int option) {
 
         Scanner scanner = new Scanner(System.in);
         
@@ -31,10 +33,10 @@ public class Login {
             
             switch (choice) {
                 case 1:
-                    authenticateUser(scanner, connection);
+                    authenticateUser(scanner, connection, option);
                     break;
                 case 2:
-                    createAccount(scanner, connection);
+                    createAccount(scanner, connection, option);
                     break;
                 case 3:
                     System.out.println("Exiting program.");
@@ -46,7 +48,8 @@ public class Login {
         }
     }
 
-    private static void authenticateUser(Scanner scanner, OracleConnection connection) {
+    private static void authenticateUser(Scanner scanner, OracleConnection connection, int option) {
+        if(option == 1){
             try {
                 System.out.print("Enter your username: ");
                 String username = scanner.nextLine();
@@ -77,9 +80,11 @@ public class Login {
                 System.out.println("ERROR: Authentication failed.");
                 e.printStackTrace();
             }
+        }
     }
 
-    private static void createAccount(Scanner scanner, Connection connection) {
+    private static void createAccount(Scanner scanner, Connection connection, int option) {
+        if(option == 1){
         try {
             System.out.print("Enter state_id: ");
             String stateId = scanner.nextLine();
@@ -100,7 +105,7 @@ public class Login {
             System.out.print("Enter username: ");
             String username = scanner.nextLine(); 
             while(true) {
-                if(uniqueUser(connection, username) > 0) break;
+                if(uniqueCustomer(connection, username) > 0) break;
                 System.out.print("Enter username: ");
                 username = scanner.nextLine();
             }
@@ -130,8 +135,9 @@ public class Login {
             System.out.println("ERROR: Account creation failed.");
             e.printStackTrace();
         }
+    }
     }    
-    private static int uniqueUser(Connection connection, String username) {
+    private static int uniqueCustomer(Connection connection, String username) {
         String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'";
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
