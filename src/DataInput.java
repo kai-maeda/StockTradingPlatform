@@ -88,7 +88,6 @@ public class DataInput {
                             correctParameters = parameters;
                             correctValues = values;
                         }
-                        if(i == 4) {
                         // System.out.println("i and j: " + i + " " + j + " CV: " + correctValues[0] + " "  + correctValues[2] +  " " + correctValues[3] +  " CP: " + correctParameters[0]);
                         String selectQuery = buildSelectQuery(tableName[j], correctParameters,  correctValues, integers,floats);
                         // System.out.println("selectQuery: " + selectQuery);
@@ -108,7 +107,6 @@ public class DataInput {
                             } 
                         } catch (SQLException e) {
                             e.printStackTrace();
-                        }
                         }
                     }
                 }
