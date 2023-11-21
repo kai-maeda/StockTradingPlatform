@@ -90,7 +90,7 @@ public class TraderInterface {
                     buy(connection, scanner, accountId, tax_id);
                     break;
                 case 4:
-                    sell();
+                    sell(connection, scanner, accountId, tax_id);
                     break;
                 case 5:
                     cancel();
@@ -102,7 +102,7 @@ public class TraderInterface {
                     showTransactionHistory();
                     break;
                 case 8:
-                    listStockPrice();
+                    listStockPrice(connection, scanner);
                     break;
                 case 9:
                     actorProfile();
@@ -206,6 +206,7 @@ public class TraderInterface {
                 // Process the valid double input (amount) here
                 System.out.println("You entered: " + amount);
                 depositSQL(amount, connection, accountId);
+                createDepositTransaction(connection, amount);
                 break; // Exit the loop since valid input was provided
             } else {
                 System.out.println("Invalid input. Please enter a valid decimal number.");
@@ -252,6 +253,7 @@ public class TraderInterface {
                     } else {
                         withdrawSQL(amount, connection, accountId);
                         System.out.println("Withdrawal of $" + amount + " successful!");
+                        createWithdrawTransaction(connection, amount);
                         break; // Exit the loop after successful withdrawal
                     }
                 }
@@ -278,6 +280,25 @@ public class TraderInterface {
             }
         } catch (SQLException e) {
             System.out.println("ERROR: Withdrawal failed.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void createWithdrawTransaction(OracleConnection connection, double amount){
+        int transaction_id = createTransaction(connection);
+        String insertQuery = "INSERT INTO Withdraw (tid, amount) VALUES (?, ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setInt(1, transaction_id);
+            preparedStatement.setDouble(2, amount);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Withdraw Transaction created successfully!");
+            } else {
+                System.out.println("Withdraw Transaction creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Withdraw Transaction creation failed.");
             e.printStackTrace();
         }
     }
@@ -388,9 +409,91 @@ public class TraderInterface {
     }
         
 
-    private static void sell() {
+    private static void sell(OracleConnection connection, Scanner scanner , int acc_id, int tax_id) {
         // Implement sell logic
         System.out.println("Sell option selected.");
+        System.out.println("Enter the symbol of the stock you would like to sell: ");
+        String symbol = scanner.nextLine();
+        double stockPrice = getStockPrice(connection, symbol);
+        if(stockPrice == -1.0) {
+            System.out.println("Stock does not exist.");
+            return;
+        }
+        System.out.println("Enter the number of shares you would like to sell: ");
+        int numShares = 0;
+        while (true) {
+            System.out.print("Type the amount of stock you wish to sell: ");
+            try {
+                numShares = Integer.parseInt(scanner.nextLine());
+                if(numShares <= 0) {
+                    System.out.println("Invalid input. Number of shares must be greater than zero.");
+                    return;
+                }
+                break;  // Exit the loop if the input is a valid integer
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer. Try again.");
+            }
+        }
+        String selectQuery = "SELECT num_share FROM Stock_Account WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if (!resultSet.next()) {
+                System.out.println("You do not own any shares of this stock.");
+                return;
+            }
+            else{
+                int numSharesOwned = resultSet.getInt("num_share");
+                if(numSharesOwned < numShares) {
+                    System.out.println("You do not own enough shares of this stock.");
+                    return;
+                }
+                else{
+                    double totalCost = stockPrice * numShares;
+                    //depositSQL(totalCost, connection, acc_id);
+                    String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(totalCost) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+                    try (Statement statement2 = connection.createStatement()) {
+                        int rowsAffected = statement2.executeUpdate(updateQuery);
+                        if (rowsAffected > 0) {
+                            System.out.println("Sold Stock successful!");
+                        } else {
+                            System.out.println("Sale failed.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("ERROR: Sale failed.");
+                        e.printStackTrace();
+                    }
+                    depositSQL(totalCost, connection, acc_id);
+                    createSellTransaction(connection, numShares, symbol, stockPrice);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+
+    }
+
+    private static void createSellTransaction(OracleConnection connection, int numShares, String symbol, double price){
+        String insertQuery = "INSERT INTO Sell (tid, shares, sell_price, symbol) VALUES (?, ?, ?, ?)";
+
+        int transaction_id = createTransaction(connection);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setDouble(1, transaction_id);
+            preparedStatement.setInt(2, numShares);
+            preparedStatement.setDouble(3, price);
+            preparedStatement.setString(4, symbol);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Sell Transaction created successfully!");
+            } else {
+                System.out.println("Sell Transaction creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Sell Transaction creation failed.");
+            e.printStackTrace();
+        }
     }
 
     private static void cancel() {
@@ -441,6 +544,25 @@ public class TraderInterface {
         }
     }
 
+    private static void createDepositTransaction(OracleConnection connection, double amount){
+        int transaction_id = createTransaction(connection);
+        String insertQuery = "INSERT INTO Deposit (tid, amount) VALUES (?, ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setInt(1, transaction_id);
+            preparedStatement.setDouble(2, amount);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Deposit Transaction created successfully!");
+            } else {
+                System.out.println("Deposit Transaction creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Deposit Transaction creation failed.");
+            e.printStackTrace();
+        }
+    }
+
     private static int createTransaction(OracleConnection connection){
         int transaction_id = 0;
         while(true){
@@ -485,9 +607,20 @@ public class TraderInterface {
         System.out.println("Show Transaction History option selected.");
     }
 
-    private static void listStockPrice() {
+    private static void listStockPrice(OracleConnection connection, Scanner scanner) {
         // Implement list stock price logic
         System.out.println("List Current Stock Price option selected.");
+        System.out.println("Please enter the symbol of the stock you would like to view: ");
+        String symbol = scanner.nextLine();
+        double stockPrice = getStockPrice(connection, symbol);
+        if(stockPrice != -1.0) {
+            System.out.println("Stock exists.");
+            System.out.println("Current price of " + symbol + " is: " + stockPrice);
+        }
+        else{
+            System.out.println("Stock does not exist.");
+        }
+
     }
 
     private static void actorProfile() {
