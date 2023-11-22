@@ -55,7 +55,7 @@ public class MainApplication {
             System.out.println("Database username: " + connection.getUserName());
             System.out.println();
 
-            setDate(connection);
+            //setDate(connection);
             //int tax_id = 1000;
             //ManagerInterface.parentFunction(connection, tax_id);
             DataInput.main3(connection);
@@ -70,6 +70,7 @@ public class MainApplication {
         }
     }
     
+    /* 
     public static void setDate(OracleConnection connection) {
         String insertQuery = "INSERT INTO Current_Time (curr_date) VALUES (?)";
         String current_date = "2023-10-16";
@@ -89,5 +90,6 @@ public class MainApplication {
             } catch (SQLException e) {e.printStackTrace();}
         } catch (ParseException e) {e.printStackTrace();}
     }
+    */
 
 }

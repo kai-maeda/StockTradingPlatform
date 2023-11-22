@@ -92,6 +92,7 @@ public class Demo {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if (resultSet.next()) {
                 curr_date = resultSet.getString("curr_date");
+                curr_date = curr_date.substring(0, 10);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -132,6 +133,7 @@ public class Demo {
             System.out.println("Market is already open.");
             return;
         }
+        goToNextDay(connection);
         String updateQuery = "UPDATE Current_Time SET is_open = 1";
         try (Statement statement = connection.createStatement()) {
             int rowsAffected = statement.executeUpdate(updateQuery);

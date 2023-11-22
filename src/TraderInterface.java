@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 
@@ -81,10 +82,10 @@ public class TraderInterface {
 
             switch (choice) {
                 case 1:
-                    deposit(scanner, connection, accountId);
+                    deposit(scanner, connection, accountId, tax_id);
                     break;
                 case 2:
-                    withdraw(scanner, connection, accountId);
+                    withdraw(scanner, connection, accountId, tax_id);
                     break;
                 case 3:
                     buy(connection, scanner, accountId, tax_id);
@@ -99,7 +100,7 @@ public class TraderInterface {
                     showBalance(connection, accountId);
                     break;
                 case 7:
-                    showTransactionHistory();
+                    showTransactionHistory(connection, tax_id);
                     break;
                 case 8:
                     listStockPrice(connection, scanner);
@@ -197,7 +198,7 @@ public class TraderInterface {
         }
     }
 
-    private static void deposit(Scanner scanner, OracleConnection connection, int accountId) {
+    private static void deposit(Scanner scanner, OracleConnection connection, int accountId, int tax_id) {
         System.out.println("Deposit option selected.");
         while (true) {
             System.out.println("Please enter the amount you would like to deposit as a decimal number: ");
@@ -206,7 +207,7 @@ public class TraderInterface {
                 // Process the valid double input (amount) here
                 System.out.println("You entered: " + amount);
                 depositSQL(amount, connection, accountId);
-                createDepositTransaction(connection, amount);
+                createDepositTransaction(connection, amount, tax_id);
                 break; // Exit the loop since valid input was provided
             } else {
                 System.out.println("Invalid input. Please enter a valid decimal number.");
@@ -237,7 +238,7 @@ public class TraderInterface {
 
     }
 
-    private static void withdraw(Scanner scanner, OracleConnection connection, int accountId) {
+    private static void withdraw(Scanner scanner, OracleConnection connection, int accountId, int tax_id) {
         System.out.println("Withdraw option selected.");
         while (true) {
             System.out.println("Please enter the amount you would like to withdraw as a decimal number: ");
@@ -253,7 +254,7 @@ public class TraderInterface {
                     } else {
                         withdrawSQL(amount, connection, accountId);
                         System.out.println("Withdrawal of $" + amount + " successful!");
-                        createWithdrawTransaction(connection, amount);
+                        createWithdrawTransaction(connection, amount, tax_id);
                         break; // Exit the loop after successful withdrawal
                     }
                 }
@@ -284,8 +285,8 @@ public class TraderInterface {
         }
     }
 
-    private static void createWithdrawTransaction(OracleConnection connection, double amount){
-        int transaction_id = createTransaction(connection);
+    private static void createWithdrawTransaction(OracleConnection connection, double amount, int tax_id){
+        int transaction_id = createTransaction(connection, tax_id);
         String insertQuery = "INSERT INTO Withdraw (tid, amount) VALUES (?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
@@ -376,7 +377,7 @@ public class TraderInterface {
                     System.out.println("ERROR: Purchase failed.");
                     e.printStackTrace();
                 }
-                createBuyTransaction(connection, numShares, symbol, stockPrice, new Date(System.currentTimeMillis()));
+                createBuyTransaction(connection, numShares, symbol, stockPrice, tax_id);
 
             }
         }
@@ -463,7 +464,7 @@ public class TraderInterface {
                         e.printStackTrace();
                     }
                     depositSQL(totalCost, connection, acc_id);
-                    createSellTransaction(connection, numShares, symbol, stockPrice);
+                    createSellTransaction(connection, numShares, symbol, stockPrice, tax_id);
                 }
             }
         } catch (SQLException e) {
@@ -473,10 +474,10 @@ public class TraderInterface {
 
     }
 
-    private static void createSellTransaction(OracleConnection connection, int numShares, String symbol, double price){
+    private static void createSellTransaction(OracleConnection connection, int numShares, String symbol, double price, int tax_id){
         String insertQuery = "INSERT INTO Sell (tid, shares, sell_price, symbol) VALUES (?, ?, ?, ?)";
 
-        int transaction_id = createTransaction(connection);
+        int transaction_id = createTransaction(connection, tax_id);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setDouble(1, transaction_id);
@@ -521,10 +522,10 @@ public class TraderInterface {
         return balance;
     }
 
-    private static void createBuyTransaction(OracleConnection connection, int numShares, String symbol, double price, Date date){
+    private static void createBuyTransaction(OracleConnection connection, int numShares, String symbol, double price, int tax_id){
         String insertQuery = "INSERT INTO Buy (tid, shares, buy_price, symbol) VALUES (?, ?, ?, ?)";
 
-        int transaction_id = createTransaction(connection);
+        int transaction_id = createTransaction(connection, tax_id);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setDouble(1, transaction_id);
@@ -544,8 +545,8 @@ public class TraderInterface {
         }
     }
 
-    private static void createDepositTransaction(OracleConnection connection, double amount){
-        int transaction_id = createTransaction(connection);
+    private static void createDepositTransaction(OracleConnection connection, double amount, int tax_id){
+        int transaction_id = createTransaction(connection, tax_id);
         String insertQuery = "INSERT INTO Deposit (tid, amount) VALUES (?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
@@ -563,7 +564,7 @@ public class TraderInterface {
         }
     }
 
-    private static int createTransaction(OracleConnection connection){
+    private static int createTransaction(OracleConnection connection, int tax_id){
         int transaction_id = 0;
         while(true){
             Random random = new Random();
@@ -584,6 +585,7 @@ public class TraderInterface {
         System.out.println("Generated Transaction Key: " + transaction_id);
         String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
 
+        //Date date = Demo.getCurrentDate(connection);
         Date date = new Date(System.currentTimeMillis());
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
@@ -599,12 +601,40 @@ public class TraderInterface {
             System.out.println("Transaction Account creation failed.");
             e.printStackTrace();
         }
+        insertIntoCommits(connection, transaction_id, tax_id);
+        
         return(transaction_id);
     }
 
-    private static void showTransactionHistory() {
+    private static void insertIntoCommits(OracleConnection connection, int transaction_id, int tax_id){
+        String insertQuery = "INSERT INTO Commits (acc_id, tid, tax_id) VALUES (?, ?, ?)";
+        int acc_id = getAccountId(tax_id, connection);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setInt(1, acc_id);
+            preparedStatement.setInt(2, transaction_id);
+            preparedStatement.setInt(3, tax_id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Commit created successfully!");
+            } else {
+                System.out.println("Commit creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Commit creation failed.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void showTransactionHistory(OracleConnection connection, int tax_id) {
         // Implement show transaction history logic
         System.out.println("Show Transaction History option selected.");
+        ArrayList<Integer> transactions = new ArrayList<Integer>();
+        transactions = getUserTransactions(connection, tax_id);
+        for(int i = 0; i < transactions.size(); i++) {
+            //System.out.println(transactions.get(i));
+        }
     }
 
     private static void listStockPrice(OracleConnection connection, Scanner scanner) {
@@ -651,5 +681,27 @@ public class TraderInterface {
 
         return (false);
     }
+
+    
+    public static ArrayList<Integer> getUserTransactions(OracleConnection connection, int tax_id) {
+        ArrayList<Integer> transactions = new ArrayList<Integer>();
+        String selectQuery = "SELECT * FROM Commits WHERE tax_id = " + Integer.toString(tax_id);
+        try (Statement statement = connection.createStatement()) {
+
+            ResultSet resultSet = statement.executeQuery(
+                    selectQuery);
+            while (resultSet.next()) {
+                transactions.add(resultSet.getInt("tid"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Handle any exceptions that may occur during database access
+        }
+
+        return (transactions);
+    }
+
+    //declare helper functions to print transactions
+    
 
 }
