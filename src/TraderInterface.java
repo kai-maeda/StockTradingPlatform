@@ -72,8 +72,8 @@ public class TraderInterface {
             System.out.println("6. Show Balance");
             System.out.println("7. Show Transaction History");
             System.out.println("8. List Current Stock Price");
-            System.out.println("9. Actor Profile");
-            System.out.println("10. Movie Information");
+            System.out.println("9. Movie Information");
+            System.out.println("10. List all Reviews for Movie");
             System.out.println("0. Exit");
 
             System.out.print("Enter your choice (0-10): ");
@@ -106,15 +106,16 @@ public class TraderInterface {
                     listStockPrice(connection, scanner);
                     break;
                 case 9:
-                    actorProfile();
+                    movieInformation(connection, scanner);
                     break;
                 case 10:
-                    movieInformation();
+                    listAllReviews(connection, scanner);
                     break;
                 case 0:
                     System.out.println("Exiting Trader Interface.");
-                    scanner.close();
-                    System.exit(0);
+                    //scanner.close();
+                    StartupOptions.main2(connection);
+                    //System.exit(0);
                 default:
                     System.out.println("Invalid option. Please choose a valid option (0-10).");
             }
@@ -646,6 +647,17 @@ public class TraderInterface {
         if(stockPrice != -1.0) {
             System.out.println("Stock exists.");
             System.out.println("Current price of " + symbol + " is: " + stockPrice);
+            String selectQuery = "SELECT * FROM Stock_Actor WHERE symbol = " + "'" + symbol + "'";
+            try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()) {
+                System.out.println("Actor Name: " + resultSet.getString("actor_name"));
+                System.out.println("Date of Birth: " + resultSet.getString("date_of_birth").substring(0, 10));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         }
         else{
             System.out.println("Stock does not exist.");
@@ -658,9 +670,37 @@ public class TraderInterface {
         System.out.println("Actor Profile option selected.");
     }
 
-    private static void movieInformation() {
+    private static void movieInformation(OracleConnection connection, Scanner scanner) {
         // Implement movie information logic
         System.out.println("Movie Information option selected.");
+        System.out.println("Enter the name of the movie you would like to view: ");
+        String movieName = scanner.nextLine();
+        System.out.println("Enter the year of the movie you would like to view: ");
+        int year = 0;
+        while (true) {
+            System.out.print("Type the year of the movie you wish to view: ");
+            try {
+                year = Integer.parseInt(scanner.nextLine());
+                break;  // Exit the loop if the input is a valid integer
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer. Try again.");
+            }
+        }
+        String selectQuery = "SELECT * FROM Movie WHERE title = " + "'" + movieName + "'" + " AND movie_year = " + Integer.toString(year);
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()) {
+                System.out.println("Movie Title: " + resultSet.getString("title"));
+                System.out.println("Year: " + resultSet.getString("movie_year"));
+                System.out.println("Rating: " + resultSet.getString("rating"));
+            }
+            else{
+                System.out.println("Movie does not exist.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static boolean doesAccountExist(OracleConnection connection, int tax_id) {
@@ -699,6 +739,41 @@ public class TraderInterface {
         }
 
         return (transactions);
+    }
+
+    private static void listAllReviews(OracleConnection connection, Scanner scanner){
+        System.out.println("List all Reviews for Movie option selected.");
+        System.out.println("Enter the name of the movie you would like to view: ");
+        String movieName = scanner.nextLine();
+        System.out.println("Enter the year of the movie you would like to view: ");
+        int year = 0;
+        while (true) {
+            System.out.print("Type the year of the movie you wish to view: ");
+            try {
+                year = Integer.parseInt(scanner.nextLine());
+                break;  // Exit the loop if the input is a valid integer
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer. Try again.");
+            }
+        }
+        String selectQuery = "SELECT * FROM Review WHERE title = " + "'" + movieName + "'" + " AND year_written = " + Integer.toString(year);
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            int count = 1;
+            boolean found = false;
+            while(resultSet.next()) {
+                found = true;
+                System.out.println("Review " + count + ": " + resultSet.getString("written_review"));
+                count++;
+            }
+            if (found == false) {
+                System.out.println("Movie does not exist.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     //declare helper functions to print transactions

@@ -22,7 +22,8 @@ public class StartupOptions {
         System.out.println("1. Customer Interface");
         System.out.println("2. Manager Interface");
         System.out.println("3. Demo");
-        System.out.println("Please select an option (1/2/3):");
+        System.out.println("0. Exit");
+        System.out.println("Please select an option:");
 
         int option = scanner.nextInt();
 
@@ -43,6 +44,10 @@ public class StartupOptions {
                 System.out.println("You selected Demo.");
                 Demo.initalizeInterface(connection, scanner);
                 // Add your demo logic here
+                break;
+            case 0:
+                System.out.println("Exiting...");
+                System.exit(0);
                 break;
             default:
                 System.out.println("Invalid option. Please select a valid option (1/2/3).");
