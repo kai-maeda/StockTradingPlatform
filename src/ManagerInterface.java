@@ -32,6 +32,7 @@ public class ManagerInterface {
             System.out.println("6. Delete Transactions");
             System.out.println("7. Change Monthly Interest Rate");
             System.out.println("0. Exit");
+            System.out.println("=======================================================================================================================");
 
             System.out.print("Enter your choice (0-7): ");
             int choice = scanner.nextInt();
@@ -41,7 +42,7 @@ public class ManagerInterface {
 
             switch (choice) {
                 case 1:
-                    addInterest(connection);
+                    addInterest(connection,tax_id);
                     break;
                 case 2:
                     generateMonthlyStatement();
@@ -72,18 +73,28 @@ public class ManagerInterface {
             }
         }
     }
-    public static void addInterest(OracleConnection connection) {
-        String selectQuery = "SELECT * FROM Current_Time";
-        String curr_date = "";
-        try(Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery(selectQuery);
-            if(resultSet.next()) {
-                curr_date = resultSet.getString("curr_date");
-            }
-        } catch (SQLException e) {e.printStackTrace();}
-        LocalDate date = LocalDate.parse(curr_date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        if(date.getDayOfMonth() == date.withDayOfMonth(date.lengthOfMonth()).getDayOfMonth()) {
-            //will finish once monthly statement is done. IDK what monthly interest rate is
+    public static void addInterest(OracleConnection connection, int tax_id) {
+        String curr_date = Demo.getDate(connection,1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate curr_date2 = LocalDate.parse(curr_date, formatter);
+        
+        // System.out.println(curr_date2.monthrange());
+        if(curr_date2.getDayOfMonth() == curr_date2.lengthOfMonth()) {
+            String selectQuery = ("SELECT monthlyInterest " + 
+                                "FROM Manager " +  
+                                "WHERE tax_id = " + tax_id);
+            try(Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                resultSet.next();
+                float monthlyInterest = resultSet.getFloat("monthlyInterest");
+                selectQuery = ("UPDATE Market_Account " + 
+                            "SET balance = balance + balance * " + monthlyInterest);
+                try(Statement statement2 = connection.createStatement()) {
+                    statement2.executeQuery(selectQuery);
+                    System.out.println("Added monthly interest rate of " + monthlyInterest + " to all customer market accounts!");
+                }
+            }  catch (SQLException e) {e.printStackTrace();}
+            System.out.println("=======================================================================================================================");
         } else {
             System.out.println("\nSorry you are only able to add appropriate monthly interest on the last business day of the month. Please try again later!\n");
         }
@@ -92,35 +103,33 @@ public class ManagerInterface {
         //
     }    
     public static void listActiveCustomers(OracleConnection connection) {
-        //Need to implement that first query is labed AS. only takes when sumshares > 1000. fix so that it also takes into account sell
-        String selectQuery = ("SELECT C.tax_id, SUM(B.shares) AS sumShares " + 
-                              "FROM Buy B, Transactions T, Commits C " + 
-                              "WHERE B.tid = T.tid AND C.tid = T.tid AND EXTRACT(MONTH FROM T.date_executed) = 11 " + 
-                              "GROUP BY C.tax_id");
+        String curr_date = Demo.getDate(connection,1);
+        String selectQuery = ("SELECT C.* " + 
+                                "FROM Customer C, (SELECT T.tax_id, SUM(T.sumShares) AS totalShares " + 
+                                    "FROM (SELECT C.tax_id, SUM(B.shares) AS sumShares " +
+                                        "FROM Buy B, Transactions T, Commits C " +
+                                        "WHERE B.tid = T.tid AND C.tid = T.tid AND EXTRACT(MONTH FROM T.date_executed) = " + "EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))" +
+                                        "GROUP BY C.tax_id " +
+                                        "UNION " +
+                                        "SELECT C.tax_id, SUM(S.shares) AS sumShares " +
+                                        "FROM Sell S, Transactions T, Commits C " +
+                                        "WHERE S.tid = T.tid AND C.tid = T.tid AND EXTRACT(MONTH FROM T.date_executed) = " +  "EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))" +
+                                        "GROUP BY C.tax_id) T " + 
+                                    "GROUP BY T.tax_id) T2 " + 
+                                "WHERE C.tax_id = T2.tax_id AND T2.totalShares >= 1000");
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             System.out.println("Here is a list of all customers who have bought or sold at least 1000 shares this month...");
-            
             while(resultSet.next()) {
+                String state_id = resultSet.getString("state_id").trim();
                 int tax_id = resultSet.getInt("tax_id");
-                selectQuery = ("SELECT * " +
-                               "FROM Customer C " +
-                              "WHERE C.tax_id = " + "'" + tax_id + "'" + " ");
-                try(Statement statement2 = connection.createStatement()) {
-                    ResultSet resultSet2 = statement2.executeQuery(selectQuery);
-                    
-                    if(resultSet2.next()) {
-                        String state_id = resultSet2.getString("state_id").trim();
-                        tax_id = resultSet2.getInt("tax_id");
-                        String cname = resultSet2.getString("cname").trim();
-                        String phone = resultSet2.getString("phone").trim();
-                        String email = resultSet2.getString("email").trim();
-                        String username = resultSet2.getString("username").trim();
-                        String password = resultSet2.getString("password").trim();
-                        System.out.println("State_id: " + state_id + ", Tax_id: " + tax_id + ", Customer Name: " + cname + ", Phone Number: " + phone + 
-                        ", Email: " + email + ", Username: " + username + ", Password: " + password);
-                    }
-                }
+                String cname = resultSet.getString("cname").trim();
+                String phone = resultSet.getString("phone").trim();
+                String email = resultSet.getString("email").trim();
+                String username = resultSet.getString("username").trim();
+                String password = resultSet.getString("password").trim();
+                System.out.println("State_id: " + state_id + ", Tax_id: " + tax_id + ", Customer Name: " + cname + ", Phone Number: " + phone + 
+                ", Email: " + email + ", Username: " + username + ", Password: " + password);
             }
             System.out.println("=======================================================================================================================");
         } catch (SQLException e) {e.printStackTrace();}

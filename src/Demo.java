@@ -36,7 +36,7 @@ public class Demo {
     public static void initalizeInterface(OracleConnection connection, Scanner scanner) {
         while (true) {
             System.out.println("Welcome to the Demo Interface:");
-            System.out.println("The current date is: " + getDate(connection));
+            System.out.println("The current date is: " + getDate(connection,0));
             System.out.println("1. Open Market");
             System.out.println("2. Close Market");
             System.out.println("3. Go to Next Day");
@@ -85,7 +85,7 @@ public class Demo {
         }
     }
 
-    public static String getDate(OracleConnection connection) {
+    public static String getDate(OracleConnection connection, int flag) {
         String selectQuery = "SELECT * FROM Current_Time";
         String curr_date = "";
         try (Statement statement = connection.createStatement()) {
@@ -97,7 +97,8 @@ public class Demo {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        System.out.println("Current Date: " + curr_date);
+        if(flag == 0)
+            System.out.println("Current Date: " + curr_date);
         return (curr_date);
     }
 

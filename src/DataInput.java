@@ -106,6 +106,7 @@ public class DataInput {
                                 }
                             } 
                         } catch (SQLException e) {
+                            System.out.println(selectQuery);
                             e.printStackTrace();
                         }
                     }
