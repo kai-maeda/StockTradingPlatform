@@ -565,7 +565,7 @@ public class TraderInterface {
         }
     }
 
-    private static int createTransaction(OracleConnection connection, int tax_id){
+    public static int createTransaction(OracleConnection connection, int tax_id){
         int transaction_id = 0;
         while(true){
             Random random = new Random();
@@ -607,7 +607,7 @@ public class TraderInterface {
         return(transaction_id);
     }
 
-    private static void insertIntoCommits(OracleConnection connection, int transaction_id, int tax_id){
+    public static void insertIntoCommits(OracleConnection connection, int transaction_id, int tax_id){
         String insertQuery = "INSERT INTO Commits (acc_id, tid, tax_id) VALUES (?, ?, ?)";
         int acc_id = getAccountId(tax_id, connection);
 

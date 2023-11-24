@@ -80,10 +80,7 @@ public class DataInput {
                             correctParameters[n] =  "acc_id";
                             correctValues = Arrays.copyOf(values, n + 1);
                             int tax_id = Integer.parseInt(correctValues[0]);
-                            // System.out.println("acc_id: " + TraderInterface.getAccountId(tax_id,connection) + " tax_id: " + tax_id);
-                            // import packageName.TraderInterface;
                             correctValues[n] = Integer.toString(TraderInterface.getAccountId(tax_id,connection));
-                            
                         } else {
                             correctParameters = parameters;
                             correctValues = values;
@@ -150,8 +147,15 @@ public class DataInput {
     public static String buildSelectQuery(String tableName, String[] parameters, String[] values, String[] integers, String[] floats) {
         StringBuilder queryBuilder = new StringBuilder("SELECT * FROM ");
         queryBuilder.append(tableName);
-
         queryBuilder.append(" WHERE ");
+        if(tableName == "Market_Account") {
+            String[] temp_parameters = parameters;
+            String[] temp_values = values;
+            parameters = new String[parameters.length-1];
+            values = new String[values.length-1];
+            System.arraycopy(temp_parameters, 0, parameters, 0, parameters.length);
+            System.arraycopy(temp_values, 0, values, 0, values.length);
+        }
         for (int i = 0; i < values.length; i++) {
             if (i > 0) {
                 queryBuilder.append(" AND ");

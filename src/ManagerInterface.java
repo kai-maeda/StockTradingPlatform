@@ -44,7 +44,7 @@ public class ManagerInterface {
                     addInterest(connection,tax_id);
                     break;
                 case 2:
-                    generateMonthlyStatement();
+                    generateMonthlyStatement(connection, scanner);
                     break;
                 case 3:
                     listActiveCustomers(connection);
@@ -77,26 +77,55 @@ public class ManagerInterface {
         
         // System.out.println(curr_date2.monthrange());
         if(curr_date2.getDayOfMonth() == curr_date2.lengthOfMonth()) {
-            String selectQuery = ("SELECT monthlyInterest " + 
+            String selectQuery1 = ("SELECT monthlyInterest " + 
                                 "FROM Manager " +  
                                 "WHERE tax_id = " + tax_id);
+            String selectQuery2 = "SELECT tax_id, balance " +
+                                    "FROM Market_Account";
+            String insertQuery1 = "INSERT INTO Interests (tid, monthly_interest) " +
+                                    "VALUES (?, ?)";
+            
             try(Statement statement = connection.createStatement()) {
-                ResultSet resultSet = statement.executeQuery(selectQuery);
-                resultSet.next();
-                float monthlyInterest = resultSet.getFloat("monthlyInterest");
-                selectQuery = ("UPDATE Market_Account " + 
-                            "SET balance = balance + balance * " + monthlyInterest);
-                try(Statement statement2 = connection.createStatement()) {
-                    statement2.executeQuery(selectQuery);
-                    System.out.println("Added monthly interest rate of " + monthlyInterest + " to all customer market accounts!");
+                ResultSet resultSet1 = statement.executeQuery(selectQuery1);
+                resultSet1.next();
+                float monthlyInterest = resultSet1.getFloat("monthlyInterest");
+                String updateQuery1 = ("UPDATE Market_Account " + 
+                                    "SET balance = balance + balance * " + monthlyInterest);
+                statement.executeQuery(updateQuery1);
+                ResultSet resultSet2 = statement.executeQuery(selectQuery2);
+                while(resultSet2.next()) {
+                    int acc_tax_id = resultSet2.getInt("tax_id");
+                    float balance = resultSet2.getFloat("balance");
+                    int tid = TraderInterface.createTransaction(connection, acc_tax_id);
+                    try(PreparedStatement preparedStatement = connection.prepareStatement(insertQuery1)){
+                        preparedStatement.setInt(1, tid);
+                        preparedStatement.setFloat(2,balance * monthlyInterest);
+                        preparedStatement.executeUpdate();
+                    }
                 }
+                System.out.println("Added monthly interest rate of " + monthlyInterest + " to all customer market accounts!");
+                //add to commits and transaction and Intersts table
             }  catch (SQLException e) {e.printStackTrace();}
         } else {
-            System.out.println("\nSorry you are only able to add appropriate monthly interest on the last business day of the month. Please try again later!\n");
+            System.out.println("Sorry you are only able to add appropriate monthly interest on the last business day of the month. Please try again later!");
         }
     }    
-    public static void generateMonthlyStatement() {
-        //
+    public static void generateMonthlyStatement(OracleConnection connection, Scanner scanner) {
+        System.out.print("Please enter the tax id associated with the customer that you would like to receive a general monthly statement for: ");
+        while(true) {
+            if(scanner.hasNextInt()) {
+                int correct_id = scanner.nextInt();
+                System.out.println("=======================================================================================================================");
+                generateListOfTransaction(connection, 0, correct_id);
+                break;
+            } else {
+                String wrong_id = scanner.next();
+                if("q".equalsIgnoreCase(wrong_id)) break;
+                System.out.println("Sorry, we could not find a customer associated with that tax id.");
+                System.out.print("Please enter a new tax id or type 'q' to return to Manager Interface: ");
+            }
+        }
+
     }    
     public static void listActiveCustomers(OracleConnection connection) {
         String curr_date = Demo.getDate(connection,1);
@@ -135,6 +164,7 @@ public class ManagerInterface {
 
     public static void customerReport(OracleConnection connection, Scanner scanner) {
         System.out.print("Please enter the tax id associated with the customer that you would like to receive a customer report for: ");
+        System.out.println("=======================================================================================================================");
         while(true) {
             if(scanner.hasNextInt()) {
                 int correct_id = scanner.nextInt();
@@ -157,6 +187,7 @@ public class ManagerInterface {
                     int acc_id = resultSet2.getInt("acc_id");
                     ResultSet resultSet3 = statement.executeQuery(selectQuery3);
                     System.out.println("Here is the customer you were searching for!");
+                    System.out.println("=======================================================================================================================");
                     System.out.println("State id: " + state_id );
                     System.out.println("Tax id: " + tax_id);
                     System.out.println("Customer Name: " + cname);
@@ -190,11 +221,12 @@ public class ManagerInterface {
     public static void deleteTransactions(OracleConnection connection) {
         String deleteQuery = "DELETE FROM Transactions";
         try(Statement statement = connection.createStatement()) {
-            statement.executeQuery(deleteQuery);
+            statement.executeUpdate(deleteQuery);
             System.out.println("Successfully deleted the list of transactions for all customers!");
         } catch (SQLException e) {e.printStackTrace();}
     }
     public static void changeMonthlyInterest(OracleConnection connection, Scanner scanner) {
+        // fix interest, have to take
         System.out.print("Enter the desired monthly interest rate to be set for all customers. (Ex: 0.01): ");
         while(true) {
             if(scanner.hasNextFloat()) {
@@ -219,5 +251,54 @@ public class ManagerInterface {
             }
         }
     }    
+    public static void generateListOfTransaction(OracleConnection connection, int flag, int tax_id) {
+        String curr_date = Demo.getDate(connection,1);
+        String[] types_trans = {"Buy", "Sell", "Withdraw", "Deposit", "Cancels", "Interests"};
+        for(int i = 0; i < types_trans.length; i++) {
+            String curr_type = types_trans[i];
+            // System.out.print(curr_type[0]);
+            String selectQuery = "SELECT A.acc_id, T.date_executed, " + curr_type.charAt(0) +  ".* " + 
+                                    "FROM Account_has A, Commits O, Transactions T, " + curr_type + " " + curr_type.charAt(0) + 
+                                    " WHERE A.tax_id = O.tax_id AND A.acc_id = O.acc_id AND O.tid = T.tid AND " + curr_type.charAt(0) + ".tid = T.tid";
+            try(Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                while(resultSet.next()) {
+                    int acc_id = resultSet.getInt("acc_id");
+                    String date_executed = resultSet.getString("date_executed").trim();
+                    int tid = resultSet.getInt("tid");
+                    System.out.print("Account id: " + acc_id + ", Date executed: " + date_executed + ", Transaction id: " + tid);
+                    if(i == 0) {
+                        String symbol = resultSet.getString("symbol").trim();
+                        int shares = resultSet.getInt("shares");
+                        float buy_price = resultSet.getFloat("buy_price");
+                        System.out.print(", Stock symbol: " + acc_id + ", Shares: " + shares + ", Buy price: " + buy_price + "\n");
+                    } else if(i == 1) {
+                        String symbol = resultSet.getString("symbol").trim();
+                        int shares = resultSet.getInt("shares");
+                        float sell_price = resultSet.getFloat("sell_price");
+                        System.out.print(", Stock symbol: " + acc_id + ", Shares: " + shares + ", Sell price: " + sell_price + "\n");
+                    } else if(i == 2) {
+                        float amount = resultSet.getFloat("amount");
+                        System.out.print(", Withdrawed amount: " + amount + "\n");
+                    } else if(i == 3) {
+                        float amount = resultSet.getFloat("amount");
+                        System.out.print(", Deposited amount: " + amount + "\n");
+                    } else if(i == 4) {
+                        int ptid = resultSet.getInt("ptid");
+                        System.out.print(", Cancelled transaction id: " + ptid + "\n");
+                    }
+                    else {
+                        float monthly_interest = resultSet.getFloat("monthly_interest");
+                        System.out.print(", Monthly interest earned: $" + monthly_interest + "\n");
+                    }
+                }
+            } catch (SQLException e) {e.printStackTrace();}
+
+        }
+
+
+
+        
+}
 
 }
