@@ -41,17 +41,16 @@ public class Demo {
             System.out.println("2. Close Market");
             System.out.println("3. Go to Next Day");
             System.out.println("4. Change Stock Price");
-
-            System.out.print("Enter your choice (1-3): ");
+            System.out.println("0. Exit");
 
             int choice = 0;
 
             while (true) {
                 try {
-                    System.out.print("Enter your choice (1-3): ");
+                    System.out.print("Enter your choice (0-4): ");
                     choice = scanner.nextInt();
 
-                    if (choice >= 1 && choice <= 4) {
+                    if (choice >= 0 && choice <= 4) {
                         break; // Valid input, exit the loop
                     } else {
                         System.out.println("Invalid input. Please enter a number between 1 and 3.");
@@ -78,11 +77,38 @@ public class Demo {
                 case 4: 
                     promptChangeStockPrice(connection, scanner);
                     break;
+                case 0: 
+                    System.out.println("Exiting Demo Interface");
+                    StartupOptions.main2(connection);
+                    break;
                 default:
                     System.out.println("Invalid input. Please enter a number between 1 and 3.");
             }
 
         }
+    }
+
+    public static Date getDateSQLFriendly(OracleConnection connection) {
+        String selectQuery = "SELECT * FROM Current_Time";
+        String curr_date = "";
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if (resultSet.next()) {
+                curr_date = resultSet.getString("curr_date");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            java.util.Date customDate = sdf.parse(curr_date);
+            Date sqlDate = new Date(customDate.getTime());
+            return (sqlDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Date date = new Date(System.currentTimeMillis());
+        return (date);
     }
 
     public static String getDate(OracleConnection connection, int flag) {

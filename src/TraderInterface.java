@@ -586,8 +586,8 @@ public class TraderInterface {
         System.out.println("Generated Transaction Key: " + transaction_id);
         String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
 
-        //Date date = Demo.getCurrentDate(connection);
-        Date date = new Date(System.currentTimeMillis());
+        Date date = Demo.getDateSQLFriendly(connection);
+        //Date date = new Date(System.currentTimeMillis());
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
             preparedStatement.setDate(2, date);
@@ -633,10 +633,65 @@ public class TraderInterface {
         System.out.println("Show Transaction History option selected.");
         ArrayList<Integer> transactions = new ArrayList<Integer>();
         transactions = getUserTransactions(connection, tax_id);
-        for(int i = 0; i < transactions.size(); i++) {
-            //System.out.println(transactions.get(i));
-        }
+        for(int i = 0; i < transactions.size(); i++){
+            int transaction_id = transactions.get(i);
+            String selectQuery = "SELECT * FROM Transactions WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction ID: " + transaction_id);
+                    System.out.println("Date Executed: " + resultSet.getString("date_executed").substring(0, 10));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            selectQuery = "SELECT * FROM Deposit WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction Type: Deposit");
+                    System.out.println("Deposit Amount: " + resultSet.getString("amount"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            selectQuery = "SELECT * FROM Withdraw WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction Type: Withdraw");
+                    System.out.println("Withdraw Amount: " + resultSet.getString("amount"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            selectQuery = "SELECT * FROM Buy WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction Type: Buy");
+                    System.out.println("Number of Shares: " + resultSet.getString("shares"));
+                    System.out.println("Buy Price: " + resultSet.getString("buy_price"));
+                    System.out.println("Symbol: " + resultSet.getString("symbol"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            selectQuery = "SELECT * FROM Sell WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction Type: Sell");
+                    System.out.println("Number of Shares: " + resultSet.getString("shares"));
+                    System.out.println("Sell Price: " + resultSet.getString("sell_price"));
+                    System.out.println("Symbol: " + resultSet.getString("symbol"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            System.out.println("=======================================================================================================================");
     }
+}
 
     private static void listStockPrice(OracleConnection connection, Scanner scanner) {
         // Implement list stock price logic
