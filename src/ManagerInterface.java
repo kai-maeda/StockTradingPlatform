@@ -18,7 +18,6 @@ import java.sql.ResultSetMetaData;
 import java.text.DecimalFormat;
 
 
-
 public class ManagerInterface {
     public static void parentFunction(OracleConnection connection, int tax_id) {
         Scanner scanner = new Scanner(System.in);
