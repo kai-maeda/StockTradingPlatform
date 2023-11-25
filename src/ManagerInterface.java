@@ -240,7 +240,7 @@ public class ManagerInterface {
             if(scanner.hasNextFloat()) {
                 float temp = scanner.nextFloat();
                 if(temp < 0) {
-                    System.outa.println("Please enter a valid decimal > 0 or type 'q' to return to Manager Interface.");
+                    System.out.println("Please enter a valid decimal > 0 or type 'q' to return to Manager Interface.");
                 } else {
                     String updateQuery = "UPDATE Manager SET monthlyInterest = ?";
                     try (PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
