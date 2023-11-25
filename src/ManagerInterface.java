@@ -51,7 +51,7 @@ public class ManagerInterface {
                     listActiveCustomers(connection);
                     break;
                 case 4:
-                    generateDTER();
+                    generateDTER(connection);
                     break;
                 case 5:
                     customerReport(connection, scanner);
@@ -63,7 +63,7 @@ public class ManagerInterface {
                     changeMonthlyInterest(connection, scanner);
                     break;
                 case 0:
-                    System.out.println("Exiting Manager Interface.");
+                    System.out.println("Exiting Manager Interface...");
                     StartupOptions.main2(connection);
                 default:
                     System.out.println("Invalid option. Please choose a valid option (0-7).");
@@ -120,7 +120,7 @@ public class ManagerInterface {
                     System.out.println("Sorry this person has not created a market account yet so there is no monthly statement to print.");
                     break;
                 }
-                generateListOfTransaction(connection, 0, correct_id);
+                float dud = generateListOfTransaction(connection, 0, correct_id);
                 break;
             } else {
                 String wrong_id = scanner.next();
@@ -162,7 +162,27 @@ public class ManagerInterface {
             }
         } catch (SQLException e) {e.printStackTrace();}
     }    
-    public static void generateDTER() {
+    public static void generateDTER(OracleConnection connection) {
+        String selectQuery = "SELECT * FROM Customer";
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            System.out.println("Generating list of customers who have made more than $10,000 in the past month...");
+            while(resultSet.next()) {
+                int tax_id = resultSet.getInt("tax_id");
+                float total_earnings = generateListOfTransaction(connection, 1, tax_id);
+                if(total_earnings >= 10000) {
+                    String state_id = resultSet.getString("state_id").trim();
+                    String cname = resultSet.getString("cname").trim();
+                    String phone = resultSet.getString("phone").trim();
+                    String email = resultSet.getString("email").trim();
+                    String username = resultSet.getString("username").trim();
+                    String password = resultSet.getString("password").trim();
+                    DecimalFormat df = new DecimalFormat("#.##");
+                    String total_format = df.format(total_earnings);
+                    System.out.println("State ID = " + state_id + ", Tax ID = " + tax_id + ", Name = " + cname + ", Phone number = " + phone + ", Email = " + email + ", Username = "+ username + ", Password = "+ password +", Total Earnings = $" + total_format);
+                }
+            }
+        } catch (SQLException e) {e.printStackTrace();}
         //
     }    
 
@@ -259,12 +279,13 @@ public class ManagerInterface {
             }
         }
     }    
-    public static void generateListOfTransaction(OracleConnection connection, int flag, int tax_id) {
+    public static float generateListOfTransaction(OracleConnection connection, int flag, int tax_id) {
         String curr_date = Demo.getDate(connection,1);
         String[] types_trans = {"Buy", "Sell", "Withdraw", "Deposit", "Cancels", "Interests"};
         float total_earnings = 0;
         float commissions = 0;
         DecimalFormat df = new DecimalFormat("#.##");
+        //flag = 0 means for monthlyStatement, flag = 1 for DTER
         for(int i = 0; i < types_trans.length; i++) {
             String curr_type = types_trans[i];
             String selectQuery = "SELECT A.acc_id, T.date_executed, " + curr_type.charAt(0) +  ".* " + 
@@ -277,51 +298,52 @@ public class ManagerInterface {
                     int acc_id = resultSet.getInt("acc_id");
                     String date_executed = resultSet.getString("date_executed").trim();
                     int tid = resultSet.getInt("tid");
-                    System.out.print("Account ID: " + acc_id + ", Date executed: " + date_executed + ", Transaction ID: " + tid);
+                    if(flag == 0) System.out.print("Account ID: " + acc_id + ", Date executed: " + date_executed + ", Transaction ID: " + tid);
                     if(i == 0) {
                         commissions += 20;
                         String symbol = resultSet.getString("symbol").trim();
                         int shares = resultSet.getInt("shares");
                         float buy_price = resultSet.getFloat("buy_price");
-                        System.out.print(", Stock symbol: " + symbol + ", Shares: " + shares + ", Buy price: " + buy_price + "\n");
+                        if(flag == 0) System.out.print(", Stock symbol: " + symbol + ", Shares: " + shares + ", Buy price: " + buy_price + "\n");
                     } else if(i == 1) {
                         commissions += 20;
                         String symbol = resultSet.getString("symbol").trim();
                         float sell_price = resultSet.getFloat("sell_price");
                         int shares = resultSet.getInt("shares");
-                        System.out.print(", Stock symbol: " + symbol + ", Shares: " + shares + ", Sell price: " + sell_price + "\n");
-                        total_earnings += getSellLegs(connection,tid,sell_price);
+                        if(flag == 0) System.out.print(", Stock symbol: " + symbol + ", Shares: " + shares + ", Sell price: " + sell_price + "\n");
+                        total_earnings += getSellLegs(connection,tid,sell_price, flag);
                     } else if(i == 2) {
                         float amount = resultSet.getFloat("amount");
-                        System.out.print(", Withdrawed amount: " + amount + "\n");
+                        if(flag == 0) System.out.print(", Withdrawed amount: " + amount + "\n");
                     } else if(i == 3) {
                         float amount = resultSet.getFloat("amount");
-                        System.out.print(", Deposited amount: " + amount + "\n");
+                        if(flag == 0) System.out.print(", Deposited amount: " + amount + "\n");
                     } else if(i == 4) {
                         commissions += 20;
                         int ptid = resultSet.getInt("ptid");
-                        System.out.print(", Cancelled transaction ID: " + ptid + "\n");
+                        if(flag == 0) System.out.print(", Cancelled transaction ID: " + ptid + "\n");
                     }
                     else {
                         float monthly_interest = resultSet.getFloat("monthly_interest");
                         total_earnings += monthly_interest;
-                        System.out.print(", Monthly interest earned: $" + monthly_interest + "\n");
+                        if(flag == 0) System.out.print(", Monthly interest earned: $" + monthly_interest + "\n");
                     }
                 }
             } catch (SQLException e) {e.printStackTrace();}
         }    
-        System.out.println("=======================================================================================================================");
-        getInitialAndFinalBalance(connection, tax_id);
+        if(flag == 0) System.out.println("=======================================================================================================================");
+        getInitialAndFinalBalance(connection, tax_id, flag);
         String total_format = df.format(total_earnings);
         String commisions_format = df.format(commissions);
         if(total_earnings >= 0) {
-            System.out.println("Total earnings this month = $" + total_format);
+            if(flag == 0) System.out.println("Total earnings this month = $" + total_format);
         } else {
-            System.out.println("Total loss this month = $" + total_format);
+            if(flag == 0) System.out.println("Total loss this month = $" + total_format);
         }
-        System.out.println("Total commission paid = $" + commisions_format);
+        if(flag == 0) System.out.println("Total commission paid = $" + commisions_format);
+        return total_earnings;
     }
-    public static int getSellLegs(OracleConnection connection, int tid, float sell_price) {
+    public static int getSellLegs(OracleConnection connection, int tid, float sell_price, int flag) {
         int money_earned = 0;
         String selectQuery = "SELECT  L.* FROM Sell_leg L, Sell S WHERE L.tid = S.tid AND S.tid = " + tid; 
         try(Statement statement = connection.createStatement()) {
@@ -332,13 +354,13 @@ public class ManagerInterface {
                 String bought_format = df.format(bought_price);
                 int shares = resultSet.getInt("shares");
                 int leg_id = resultSet.getInt("leg_id");
-                System.out.println("Leg ID = " + leg_id + ", Bought price = $" + bought_format + ", Shares = " + shares);
+                if(flag == 0) System.out.println("Leg ID = " + leg_id + ", Bought price = $" + bought_format + ", Shares = " + shares);
                 money_earned += (sell_price - bought_price)*shares;
             }
         } catch (SQLException e) {e.printStackTrace();}
         return money_earned;
     }
-    public static void getInitialAndFinalBalance(OracleConnection connection, int tax_id) {
+    public static void getInitialAndFinalBalance(OracleConnection connection, int tax_id, int flag) {
         String curr_date = Demo.getDate(connection,1);
         DecimalFormat df = new DecimalFormat("#.##");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
@@ -359,7 +381,7 @@ public class ManagerInterface {
                 Month month2 = balance_date2.getMonth();
                 if(month1 != month2) {
                     initial_balance = df.format(temp_balance);
-                    System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
+                    if(flag == 0) System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
                     return;
                 }
             }
@@ -370,15 +392,15 @@ public class ManagerInterface {
                 if(month1 != month2 ) {
                     float temp_balance = resultSet.getFloat("temp_balance");
                     initial_balance = df.format(temp_balance);
-                    System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
+                    if(flag == 0) System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
                     return;
                 }
             }
-            resultSet.previous();
-            float temp_balance = resultSet.getFloat("temp_balance");
-            initial_balance = df.format(temp_balance);
-            System.out.println("Inital account balance = $" + initial_balance + " Final account balance = $" + final_balance);
-
+            if(resultSet.previous()) {
+                float temp_balance = resultSet.getFloat("temp_balance");
+                initial_balance = df.format(temp_balance);
+                if(flag == 0) System.out.println("Inital account balance = $" + initial_balance + " Final account balance = $" + final_balance);
+            }
         } catch (SQLException e) {e.printStackTrace();}
     }
     public static boolean checkIfMarketAccountExists(OracleConnection connection, int tax_id) {

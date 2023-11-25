@@ -17,15 +17,17 @@ import java.sql.PreparedStatement;
 public class StartupOptions {
     public static void main2(OracleConnection connection) {
         Scanner scanner = new Scanner(System.in);
-
+        System.out.println("=======================================================================================================================");
         System.out.println("Welcome to the Startup Options:");
         System.out.println("1. Customer Interface");
         System.out.println("2. Manager Interface");
         System.out.println("3. Demo");
         System.out.println("0. Exit");
-        System.out.println("Please select an option:");
-
+        System.out.println("=======================================================================================================================");
+        System.out.print("Enter your choice (0-3): ");
         int option = scanner.nextInt();
+        System.out.println("=======================================================================================================================");
+
 
         //scanner.nextLine(); // Consume the newline
 

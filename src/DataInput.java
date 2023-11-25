@@ -173,6 +173,7 @@ public class DataInput {
             System.arraycopy(temp_values, 0, values, 0, values.length);
         }
         for (int i = 0; i < values.length; i++) {
+            if("balance".equals(parameters[i]) || "current_price".equals(parameters[i])) continue;
             if (i > 0) {
                 queryBuilder.append(" AND ");
             }

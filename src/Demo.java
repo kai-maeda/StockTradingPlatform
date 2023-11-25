@@ -35,6 +35,7 @@ public class Demo {
 
     public static void initalizeInterface(OracleConnection connection, Scanner scanner) {
         while (true) {
+            System.out.println("=======================================================================================================================");
             System.out.println("Welcome to the Demo Interface:");
             System.out.println("The current date is: " + getDate(connection,0));
             System.out.println("1. Open Market");
@@ -42,6 +43,7 @@ public class Demo {
             System.out.println("3. Go to Next Day");
             System.out.println("4. Change Stock Price");
             System.out.println("0. Exit");
+            System.out.println("=======================================================================================================================");
 
             int choice = 0;
 
@@ -238,9 +240,10 @@ public class Demo {
         while (true) {
                 try {
                     System.out.println("Enter the new price of the stock: ");
-                    double choice = scanner.nextInt();
+                    double choice = scanner.nextFloat();
 
                     if (choice > 0) {
+                        price = choice;
                         break; // Valid input, exit the loop
                     } else {
                         System.out.println("Invalid input. Please enter a number greater than zero.");

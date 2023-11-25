@@ -762,7 +762,7 @@ public class TraderInterface {
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if (resultSet.next()) {
-                balance = resultSet.getInt("balance");
+                balance = resultSet.getFloat("balance");
             }
         } catch (SQLException e) {
             e.printStackTrace();
