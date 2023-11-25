@@ -253,9 +253,7 @@ public class ManagerInterface {
                     while(resultSet3.next()) {
                         String symbol = resultSet3.getString("symbol").trim();
                         int num_share = resultSet3.getInt("num_share");
-                        float balance_share = resultSet3.getFloat("balance_share");
-                        balance_format = df.format(balance_share);
-                        System.out.println("Symbol: " + symbol + ", Number of Shares: " + num_share + ", Market Value: $"  + balance_format);
+                        System.out.println("Symbol: " + symbol + ", Number of Shares: " + num_share);
                     }
                 } catch (SQLException e) {e.printStackTrace();}
                 break;
