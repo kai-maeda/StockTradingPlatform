@@ -15,6 +15,8 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.sql.ResultSetMetaData;
+import java.text.DecimalFormat;
+
 
 
 public class ManagerInterface {
@@ -63,8 +65,7 @@ public class ManagerInterface {
                     break;
                 case 0:
                     System.out.println("Exiting Manager Interface.");
-                    scanner.close();
-                    System.exit(0);
+                    StartupOptions.main2(connection);
                 default:
                     System.out.println("Invalid option. Please choose a valid option (0-7).");
             }
@@ -111,18 +112,22 @@ public class ManagerInterface {
         }
     }    
     public static void generateMonthlyStatement(OracleConnection connection, Scanner scanner) {
-        System.out.print("Please enter the tax id associated with the customer that you would like to receive a general monthly statement for: ");
+        System.out.print("Please enter the tax ID associated with the customer that you would like to receive a general monthly statement for: ");
         while(true) {
             if(scanner.hasNextInt()) {
                 int correct_id = scanner.nextInt();
                 System.out.println("=======================================================================================================================");
+                if(checkIfMarketAccountExists(connection, correct_id)) {
+                    System.out.println("Sorry this person has not created a market account yet so there is no monthly statement to print.");
+                    break;
+                }
                 generateListOfTransaction(connection, 0, correct_id);
                 break;
             } else {
                 String wrong_id = scanner.next();
                 if("q".equalsIgnoreCase(wrong_id)) break;
-                System.out.println("Sorry, we could not find a customer associated with that tax id.");
-                System.out.print("Please enter a new tax id or type 'q' to return to Manager Interface: ");
+                System.out.println("Sorry, we could not find a customer associated with that tax ID.");
+                System.out.print("Please enter a new tax ID or type 'q' to return to Manager Interface: ");
             }
         }
 
@@ -153,7 +158,7 @@ public class ManagerInterface {
                 String email = resultSet.getString("email").trim();
                 String username = resultSet.getString("username").trim();
                 String password = resultSet.getString("password").trim();
-                System.out.println("State id: " + state_id + ", Tax id: " + tax_id + ", Customer Name: " + cname + ", Phone Number: " + phone + 
+                System.out.println("State ID: " + state_id + ", Tax ID: " + tax_id + ", Customer Name: " + cname + ", Phone Number: " + phone + 
                 ", Email: " + email + ", Username: " + username + ", Password: " + password);
             }
         } catch (SQLException e) {e.printStackTrace();}
@@ -163,11 +168,11 @@ public class ManagerInterface {
     }    
 
     public static void customerReport(OracleConnection connection, Scanner scanner) {
-        System.out.print("Please enter the tax id associated with the customer that you would like to receive a customer report for: ");
-        System.out.println("=======================================================================================================================");
+        System.out.print("Please enter the tax ID associated with the customer that you would like to receive a customer report for: ");
         while(true) {
             if(scanner.hasNextInt()) {
                 int correct_id = scanner.nextInt();
+                System.out.println("=======================================================================================================================");
                 String selectQuery1 = "SELECT * FROM Customer WHERE tax_id = " + correct_id;
                 String selectQuery2 = "SELECT * FROM Market_Account WHERE tax_id = " + correct_id;
                 String selectQuery3 = "SELECT * FROM Stock_Account WHERE tax_id = " + correct_id;
@@ -184,12 +189,14 @@ public class ManagerInterface {
                     ResultSet resultSet2 = statement.executeQuery(selectQuery2);
                     resultSet2.next();
                     float balance = resultSet2.getFloat("balance");
+                    DecimalFormat df = new DecimalFormat("#.##");
+                    String balance_format = df.format(balance);
                     int acc_id = resultSet2.getInt("acc_id");
                     ResultSet resultSet3 = statement.executeQuery(selectQuery3);
                     System.out.println("Here is the customer you were searching for!");
                     System.out.println("=======================================================================================================================");
-                    System.out.println("State id: " + state_id );
-                    System.out.println("Tax id: " + tax_id);
+                    System.out.println("State ID: " + state_id );
+                    System.out.println("Tax ID: " + tax_id);
                     System.out.println("Customer Name: " + cname);
                     System.out.println("Phone Number: " + phone);
                     System.out.println("Email: " + email);
@@ -197,23 +204,24 @@ public class ManagerInterface {
                     System.out.println("Password: " + password);
                     System.out.println("=======================================================================================================================");
                     System.out.println("Market Account: " + acc_id);
-                    System.out.println("Balance: " + balance);
+                    System.out.println("Balance: $" + balance_format);
                     System.out.println("=======================================================================================================================");
                     System.out.println("Here are the stocks that they own!");
+                    System.out.println("=======================================================================================================================");
                     while(resultSet3.next()) {
-                        System.out.println("=======================================================================================================================");
                         String symbol = resultSet3.getString("symbol").trim();
                         int num_share = resultSet3.getInt("num_share");
                         float balance_share = resultSet3.getFloat("balance_share");
-                        System.out.println("Symbol: " + symbol + ", Number of Shares: " + num_share + ", Market Value: "  + balance_share);
+                        balance_format = df.format(balance_share);
+                        System.out.println("Symbol: " + symbol + ", Number of Shares: " + num_share + ", Market Value: $"  + balance_format);
                     }
                 } catch (SQLException e) {e.printStackTrace();}
                 break;
             } else {
                 String wrong_id = scanner.next();
                 if("q".equalsIgnoreCase(wrong_id)) break;
-                System.out.println("Sorry, we could not find a customer associated with that tax id.");
-                System.out.print("Please enter a new tax id or type 'q' to return to Manager Interface: ");
+                System.out.println("Sorry, we could not find a customer associated with that tax ID.");
+                System.out.print("Please enter a new tax ID or type 'q' to return to Manager Interface: ");
             }
         }
         
@@ -239,6 +247,7 @@ public class ManagerInterface {
                         preparedStatement.setFloat(1, temp);
                         preparedStatement.executeUpdate();
                     } catch(SQLException e) {e.printStackTrace();}
+                    System.out.println("Successfully changed the monthly interest rate of all customers to be " + temp + "!");
                     break;
                 }
             }else {
@@ -254,29 +263,35 @@ public class ManagerInterface {
     public static void generateListOfTransaction(OracleConnection connection, int flag, int tax_id) {
         String curr_date = Demo.getDate(connection,1);
         String[] types_trans = {"Buy", "Sell", "Withdraw", "Deposit", "Cancels", "Interests"};
+        float total_earnings = 0;
+        float commissions = 0;
+        DecimalFormat df = new DecimalFormat("#.##");
         for(int i = 0; i < types_trans.length; i++) {
             String curr_type = types_trans[i];
-            // System.out.print(curr_type[0]);
             String selectQuery = "SELECT A.acc_id, T.date_executed, " + curr_type.charAt(0) +  ".* " + 
                                     "FROM Account_has A, Commits O, Transactions T, " + curr_type + " " + curr_type.charAt(0) + 
-                                    " WHERE A.tax_id = O.tax_id AND A.acc_id = O.acc_id AND O.tid = T.tid AND " + curr_type.charAt(0) + ".tid = T.tid";
+                                    " WHERE A.tax_id = O.tax_id AND A.acc_id = O.acc_id AND O.tid = T.tid AND " + curr_type.charAt(0) + ".tid = T.tid" +
+                                    " AND A.tax_id = " + tax_id + " AND EXTRACT(MONTH FROM T.date_executed) = EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))";
             try(Statement statement = connection.createStatement()) {
                 ResultSet resultSet = statement.executeQuery(selectQuery);
                 while(resultSet.next()) {
                     int acc_id = resultSet.getInt("acc_id");
                     String date_executed = resultSet.getString("date_executed").trim();
                     int tid = resultSet.getInt("tid");
-                    System.out.print("Account id: " + acc_id + ", Date executed: " + date_executed + ", Transaction id: " + tid);
+                    System.out.print("Account ID: " + acc_id + ", Date executed: " + date_executed + ", Transaction ID: " + tid);
                     if(i == 0) {
+                        commissions += 20;
                         String symbol = resultSet.getString("symbol").trim();
                         int shares = resultSet.getInt("shares");
                         float buy_price = resultSet.getFloat("buy_price");
-                        System.out.print(", Stock symbol: " + acc_id + ", Shares: " + shares + ", Buy price: " + buy_price + "\n");
+                        System.out.print(", Stock symbol: " + symbol + ", Shares: " + shares + ", Buy price: " + buy_price + "\n");
                     } else if(i == 1) {
+                        commissions += 20;
                         String symbol = resultSet.getString("symbol").trim();
-                        int shares = resultSet.getInt("shares");
                         float sell_price = resultSet.getFloat("sell_price");
-                        System.out.print(", Stock symbol: " + acc_id + ", Shares: " + shares + ", Sell price: " + sell_price + "\n");
+                        int shares = resultSet.getInt("shares");
+                        System.out.print(", Stock symbol: " + symbol + ", Shares: " + shares + ", Sell price: " + sell_price + "\n");
+                        total_earnings += getSellLegs(connection,tid,sell_price);
                     } else if(i == 2) {
                         float amount = resultSet.getFloat("amount");
                         System.out.print(", Withdrawed amount: " + amount + "\n");
@@ -284,21 +299,98 @@ public class ManagerInterface {
                         float amount = resultSet.getFloat("amount");
                         System.out.print(", Deposited amount: " + amount + "\n");
                     } else if(i == 4) {
+                        commissions += 20;
                         int ptid = resultSet.getInt("ptid");
-                        System.out.print(", Cancelled transaction id: " + ptid + "\n");
+                        System.out.print(", Cancelled transaction ID: " + ptid + "\n");
                     }
                     else {
                         float monthly_interest = resultSet.getFloat("monthly_interest");
+                        total_earnings += monthly_interest;
                         System.out.print(", Monthly interest earned: $" + monthly_interest + "\n");
                     }
                 }
             } catch (SQLException e) {e.printStackTrace();}
-
+        }    
+        System.out.println("=======================================================================================================================");
+        getInitialAndFinalBalance(connection, tax_id);
+        String total_format = df.format(total_earnings);
+        String commisions_format = df.format(commissions);
+        if(total_earnings >= 0) {
+            System.out.println("Total earnings this month = $" + total_format);
+        } else {
+            System.out.println("Total loss this month = $" + total_format);
         }
+        System.out.println("Total commission paid = $" + commisions_format);
+    }
+    public static int getSellLegs(OracleConnection connection, int tid, float sell_price) {
+        int money_earned = 0;
+        String selectQuery = "SELECT  L.* FROM Sell_leg L, Sell S WHERE L.tid = S.tid AND S.tid = " + tid; 
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            while(resultSet.next()) {
+                float bought_price = resultSet.getFloat("bought_price");
+                DecimalFormat df = new DecimalFormat("#.##");
+                String bought_format = df.format(bought_price);
+                int shares = resultSet.getInt("shares");
+                int leg_id = resultSet.getInt("leg_id");
+                System.out.println("Leg ID = " + leg_id + ", Bought price = $" + bought_format + ", Shares = " + shares);
+                money_earned += (sell_price - bought_price)*shares;
+            }
+        } catch (SQLException e) {e.printStackTrace();}
+        return money_earned;
+    }
+    public static void getInitialAndFinalBalance(OracleConnection connection, int tax_id) {
+        String curr_date = Demo.getDate(connection,1);
+        DecimalFormat df = new DecimalFormat("#.##");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+        DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate curr_date2 = LocalDate.parse(curr_date, formatter2);
+        Month month1 = curr_date2.getMonth();
+        String selectQuery = "SELECT T.* FROM Market_Account M, Temp_money T WHERE tax_id = " + tax_id + 
+                            " AND M.acc_id = T.acc_id ORDER BY T.balance_date DESC";
+        String final_balance="0";
+        String initial_balance = "0";
+        try(Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()) {
+                float temp_balance = resultSet.getFloat("temp_balance");
+                final_balance = df.format(temp_balance);
+                String balance_date = resultSet.getString("balance_date").trim();
+                LocalDate balance_date2 = LocalDate.parse(balance_date, formatter);
+                Month month2 = balance_date2.getMonth();
+                if(month1 != month2) {
+                    initial_balance = df.format(temp_balance);
+                    System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
+                    return;
+                }
+            }
+            while(resultSet.next()) {
+                String balance_date = resultSet.getString("balance_date").trim();
+                LocalDate balance_date2 = LocalDate.parse(balance_date, formatter);
+                Month month2 = balance_date2.getMonth();
+                if(month1 != month2 ) {
+                    float temp_balance = resultSet.getFloat("temp_balance");
+                    initial_balance = df.format(temp_balance);
+                    System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
+                    return;
+                }
+            }
+            resultSet.previous();
+            float temp_balance = resultSet.getFloat("temp_balance");
+            initial_balance = df.format(temp_balance);
+            System.out.println("Inital account balance = $" + initial_balance + " Final account balance = $" + final_balance);
 
-
-
-        
-}
+        } catch (SQLException e) {e.printStackTrace();}
+    }
+    public static boolean checkIfMarketAccountExists(OracleConnection connection, int tax_id) {
+        String selectQuery = "SELECT * FROM Market_Account WHERE tax_id = " + tax_id;
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()) {
+                return false;
+            }
+        } catch (SQLException e) {e.printStackTrace();}
+        return true;
+    }
 
 }
