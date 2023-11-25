@@ -379,6 +379,7 @@ public class TraderInterface {
                     e.printStackTrace();
                 }
                 createBuyTransaction(connection, numShares, symbol, stockPrice, tax_id);
+                createBought_Stock(connection, numShares, symbol, stockPrice, tax_id);
 
             }
         }
@@ -386,6 +387,67 @@ public class TraderInterface {
             System.out.println("Stock does not exist.");
         }
 }
+
+    private static void createBought_Stock(OracleConnection connection, int numShares, String symbol, double price, int tax_id){
+        //String addStockQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought + ? WHERE tax_id = ? AND symbol = ? AND buy_price = ?";
+        String addStockQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(numShares) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(price);
+        
+        try (Statement statement2 = connection.createStatement()) {
+            int rowsAffected = statement2.executeUpdate(addStockQuery);
+            if (rowsAffected > 0) {
+                System.out.println("create Bought_Stock successful!");
+                return;
+            } else {
+                System.out.println("No create Bought_Stock. Continue");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        
+        
+        int bought_id = 0;
+        while(true){
+            Random random = new Random();
+            bought_id = random.nextInt(Integer.MAX_VALUE);
+            String updateQuery = "SELECT * FROM Bought_Stock WHERE bought_id = " + Integer.toString(bought_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(updateQuery);
+                if (resultSet.next()) {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        
+
+        String insertQuery = "INSERT INTO Bought_Stock (buy_price, shares_bought, bought_id, acc_id, symbol, tax_id) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setDouble(1, price);
+            preparedStatement.setInt(2, numShares);
+            preparedStatement.setInt(3, bought_id);
+            preparedStatement.setInt(4, getAccountId(tax_id, connection));
+            preparedStatement.setString(5, symbol);
+            preparedStatement.setInt(6, tax_id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Stock_Bought created successfully!");
+            } else {
+                System.out.println("Stock_Bought creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Stock_Bought creation failed.");
+            e.printStackTrace();
+        }
+
+    }
+
+
 
     private static void createStockAccount(OracleConnection connection, Scanner scanner, int tax_id, int acc_id, String symbol){
         String insertQuery = "INSERT INTO Stock_Account (acc_id, symbol, num_share, balance_share, tax_id) VALUES (?, ?, ?, ?, ?)";
