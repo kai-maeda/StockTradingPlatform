@@ -390,12 +390,25 @@ public class TraderInterface {
 
     private static void createBought_Stock(OracleConnection connection, int numShares, String symbol, double price, int tax_id){
         //String addStockQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought + ? WHERE tax_id = ? AND symbol = ? AND buy_price = ?";
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(price);
+        boolean found = false;
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()){
+                found = true;
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+
+        if(found == true){
         String addStockQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(numShares) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(price);
-        
         try (Statement statement2 = connection.createStatement()) {
             int rowsAffected = statement2.executeUpdate(addStockQuery);
+            System.out.println("GOT HERE");
             if (rowsAffected > 0) {
-                System.out.println("create Bought_Stock successful!");
+                System.out.println("Updated Bought_Stock successful!");
                 return;
             } else {
                 System.out.println("No create Bought_Stock. Continue");
@@ -403,6 +416,7 @@ public class TraderInterface {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
         
         
         
@@ -471,6 +485,22 @@ public class TraderInterface {
         }
 
     }
+
+    private static void printAllShares(String symbol, OracleConnection connection){
+        System.out.println("All Owned Shares of " + symbol + ":");
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE symbol = " + "'" + symbol + "'";
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            while(resultSet.next()){
+                System.out.print("Shares Owned: " + resultSet.getString("shares_bought"));
+                System.out.println(" Buy Price: " + resultSet.getString("buy_price"));
+                System.out.println("=======================================================================================================================");
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
         
 
     private static void sell(OracleConnection connection, Scanner scanner , int acc_id, int tax_id) {
@@ -479,18 +509,22 @@ public class TraderInterface {
         System.out.println("Enter the symbol of the stock you would like to sell: ");
         String symbol = scanner.nextLine();
         double stockPrice = getStockPrice(connection, symbol);
+        printAllShares(symbol, connection);
         if(stockPrice == -1.0) {
             System.out.println("Stock does not exist.");
             return;
         }
-        System.out.println("Enter the number of shares you would like to sell: ");
+        ArrayList<Integer> sellNumSharesArray = new ArrayList<>();
+        ArrayList<Double> sellAtBuyPriceArray = new ArrayList<>();
         int numShares = 0;
+        boolean execute = false;
+        while(execute == false){
         while (true) {
             System.out.print("Type the amount of stock you wish to sell: ");
             try {
                 numShares = Integer.parseInt(scanner.nextLine());
                 if(numShares <= 0) {
-                    System.out.println("Invalid input. Number of shares must be greater than zero.");
+                    System.out.println("Invalid input. Number of shares must be an integer than zero.");
                     return;
                 }
                 break;  // Exit the loop if the input is a valid integer
@@ -498,42 +532,193 @@ public class TraderInterface {
                 System.out.println("Please enter a valid integer. Try again.");
             }
         }
-        String selectQuery = "SELECT num_share FROM Stock_Account WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
-        try (Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery(selectQuery);
-            if (!resultSet.next()) {
-                System.out.println("You do not own any shares of this stock.");
-                return;
+        double sell_at_buy_price = 0;
+        while (true) {
+            System.out.print("Type the buy price you wish to sell of: ");
+            try {
+                sell_at_buy_price = Double.parseDouble(scanner.nextLine());
+                if(sell_at_buy_price <= 0) {
+                    System.out.println("Invalid input. Buy price must be greater than zero.");
+                    return;
+                }
+                break;  // Exit the loop if the input is a valid integer
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid decimal. Try again.");
             }
-            else{
-                int numSharesOwned = resultSet.getInt("num_share");
-                if(numSharesOwned < numShares) {
-                    System.out.println("You do not own enough shares of this stock.");
+        }
+        sellNumSharesArray.add(numShares);
+        sellAtBuyPriceArray.add(sell_at_buy_price);
+        while (true) {
+            System.out.println("Do you want to sell additional shares? (Y/N)");
+            String answer = scanner.nextLine();
+        
+            if (answer.equalsIgnoreCase("Y")) {
+                execute = false;
+                break; // Exit the loop when the user enters "Y"
+            } else if (answer.equalsIgnoreCase("N")) {
+                execute = true;
+                break; // Exit the loop when the user enters "N"
+            } else {
+                System.out.println("Invalid input. Please enter 'Y' or 'N'.");
+            }
+        }
+    }
+
+    //check if user has enough shares to sell, store total to ensure that user has enough in the balance
+
+    double total = 0;
+
+    for(int i = 0; i < sellNumSharesArray.size(); i++){
+        int numSharesToSell = sellNumSharesArray.get(i);
+        double sell_at_buy_price = sellAtBuyPriceArray.get(i);
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()){
+                int shares_bought = resultSet.getInt("shares_bought");
+                if(shares_bought < numSharesToSell){
+                    System.out.println("You do not have enough shares to sell: " + numSharesToSell + " at buy price: " + sell_at_buy_price + " You only have: " + shares_bought + " shares.");
+
+                    System.out.println("Exiting Sell.");
                     return;
                 }
                 else{
-                    double totalCost = stockPrice * numShares;
-                    //depositSQL(totalCost, connection, acc_id);
-                    String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(totalCost) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
-                    try (Statement statement2 = connection.createStatement()) {
-                        int rowsAffected = statement2.executeUpdate(updateQuery);
-                        if (rowsAffected > 0) {
-                            System.out.println("Sold Stock successful!");
-                        } else {
-                            System.out.println("Sale failed.");
-                        }
-                    } catch (SQLException e) {
-                        System.out.println("ERROR: Sale failed.");
-                        e.printStackTrace();
-                    }
-                    depositSQL(totalCost, connection, acc_id);
-                    createSellTransaction(connection, numShares, symbol, stockPrice, tax_id);
+                    total += numSharesToSell * sell_at_buy_price;
                 }
             }
-        } catch (SQLException e) {
+            else{
+                System.out.println("You do not own any shares at this buy price: " + sell_at_buy_price);
+                System.out.println("Exiting Sell.");
+                return;
+            }
+        }
+        catch(SQLException e){
             e.printStackTrace();
         }
-        
+    }
+
+    if(total > getBalance(connection, acc_id)){
+        System.out.println("You do not have enough money to sell these shares.");
+        System.out.println("Exiting Sell.");
+        return;
+    }
+
+    //alter Bought_Stock table
+
+    for(int i = 0; i < sellNumSharesArray.size(); i++){
+        int numSharesToSell = sellNumSharesArray.get(i);
+        double sell_at_buy_price = sellAtBuyPriceArray.get(i);
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()){
+                int shares_bought = resultSet.getInt("shares_bought");
+                if(shares_bought == numSharesToSell){
+                    String deleteQuery = "DELETE FROM Bought_Stock WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+                    try(Statement statement2 = connection.createStatement()){
+                        int rowsAffected = statement2.executeUpdate(deleteQuery);
+                        if(rowsAffected > 0){
+                            System.out.println("Deleted Bought_Stock successful!");
+                        }
+                        else{
+                            System.out.println("Delete Bought_Stock failed.");
+                        }
+                    }
+                    catch(SQLException e){
+                        e.printStackTrace();
+                    }
+                }
+                else{
+                    String updateQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(numSharesToSell) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+                    try(Statement statement2 = connection.createStatement()){
+                        int rowsAffected = statement2.executeUpdate(updateQuery);
+                        if(rowsAffected > 0){
+                            System.out.println("Updated Bought_Stock successful!");
+                        }
+                        else{
+                            System.out.println("Update Bought_Stock failed.");
+                        }
+                    }
+                    catch(SQLException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else{
+                System.out.println("You do not own any shares at this buy price: " + sell_at_buy_price);
+                System.out.println("Exiting Sell.");
+                return;
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    String addToSell = "INSERT INTO Sell (tid, symbol, sell_price, shares) VALUES (?, ?, ?, ?)";
+
+    int transaction_id = createTransaction(connection, tax_id);
+
+    try (PreparedStatement preparedStatement = connection.prepareStatement(addToSell)) {
+        preparedStatement.setInt(1, transaction_id);
+        preparedStatement.setString(2, symbol);
+        preparedStatement.setDouble(3, stockPrice);
+        preparedStatement.setInt(4, numShares);
+
+        int rowsAffected = preparedStatement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Sell Transaction created successfully!");
+        } else {
+            System.out.println("Sell Transaction creation failed.");
+        }
+    } catch (SQLException e) {
+        System.out.println("ERROR: Sell Transaction creation failed.");
+        e.printStackTrace();
+    }
+
+    depositSQL(total, connection, acc_id);
+
+    for(int i = 0; i < sellNumSharesArray.size(); i++){
+        int numSharesToSell = sellNumSharesArray.get(i);
+        double sell_at_buy_price = sellAtBuyPriceArray.get(i);
+        int leg_id = 0;
+        while(true){
+            Random random = new Random();
+            leg_id = random.nextInt(Integer.MAX_VALUE);
+            String selectQuery = "SELECT * FROM Sell_leg WHERE leg_id = " + Integer.toString(leg_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        String insertQuery = "INSERT INTO Sell_leg (bought_price, shares, tid, leg_id) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setDouble(1, sell_at_buy_price);
+            preparedStatement.setInt(2, numSharesToSell);
+            preparedStatement.setInt(3, transaction_id);
+            preparedStatement.setInt(4, leg_id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Sell_leg created successfully!");
+            } else {
+                System.out.println("Sell_leg creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR: Sell_leg creation failed.");
+            e.printStackTrace();
+        }
+
+    }
+
 
     }
 
