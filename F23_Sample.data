@@ -64,27 +64,28 @@ tax_id,acc_id,balance
 STOCK OWNERSHIP INFORMATION
 ==============
 
-tax_id,num_share,symbol
-1022,100,SKB
-3045,500,SMD
-3045,100,STC
-2034,250,STC
-4093,100,SKB
-4093,500,SMD
-4093,50,STC
-1234,1000,SMD
-8956,100,SKB
-2341,300,SMD
-0456,500,SKB
-0456,100,STC
-0456,200,SMD
-3455,1000,SKB
-1123,100,SKB
-1123,100,SMD
-1123,100,STC
-3306,100,SKB
-3306,200,STC
-3306,100,SMD
+username,acc_id,num_share,symbol
+alfred,012,100,SKB
+billy,013,500,SMD
+billy,014,100,STC
+cindy,015,250,STC
+david,016,100,SKB
+david,017,500,SMD
+david,018,50,STC
+sailor,019,1000,SMD
+brush,020,100,SKB
+ivan,021,300,SMD
+joe,022,500,SKB
+joe,023,100,STC
+joe,024,200,SMD
+magic,025,1000,SKB
+olive,026,100,SKB
+olive,027,100,SMD
+olive,028,100,STC
+frank,029,100,SKB
+frank,030,200,STC
+frank,031,100,SMD
+
 
 ACTORS-STOCK-INFO
 =================
@@ -93,5 +94,14 @@ symbol,current_price,actor_name,date_of_birth,title,actor_role,movie_year,moneta
 SKB,40.00,Kim Basinger,8 December 1958,L.A. Confidential,Actor,1997,5000000
 SMD,71.00,Michael Douglas,25 September 1944,A Perfect Murder,Actor,1998,10000000
 STC,32.50,Tom Cruise,3 July 1962,Jerry Maguire,Actor,1996,5000000
+
+MOVIE-INFO
+==========
+
+title,movie_year,rating,written_review
+L.A. Confidential,1997,10.0,"I loved it - it is almost as good as Chinatown!"
+L.A. Confidential,1997,10.0,"Super clever story with an amazing cast as well."
+A Perfect Murder,1998,6.1,"Truly one of the movies of all time."
+Jerry Maguire,1996,8.3,"What an emotional rollercoaster!"
 
 

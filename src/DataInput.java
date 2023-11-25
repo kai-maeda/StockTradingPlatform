@@ -16,6 +16,8 @@ import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.Random;
+import java.sql.Date;
 
 
 public class DataInput {
@@ -28,16 +30,18 @@ public class DataInput {
         String filePath = "/Users/kaimaeda/csildown/cs174A_FinalProject/F23_Sample.data";
         try {
             Scanner scanner = new Scanner(new File(filePath));
-            String[] markers = {"ADMINISTRATOR", "CUSTOMERS", "MARKET", "OWNERSHIP", "ACTORS"};
+            String[] markers = {"ADMINISTRATOR", "CUSTOMERS", "MARKET", "OWNERSHIP", "ACTORS", "MOVIE-INFO"};
             String[] floats = {"balance"};
-            String[] integers = {"tax_id", "num_share", "acc_id"};
+            String[] integers = {"tax_id", "num_share", "acc_id", "review_id"};
             Map<String, String[]> markers_mapping = Map.of(
                     "ADMINISTRATOR", new String[]{"Manager"},
                     "CUSTOMERS", new String[]{"Customer"},
-                    "OWNERSHIP", new String[]{"Stock_Account"},
+                    "OWNERSHIP", new String[]{"Account_has", "Stock_Account"},
                     "MARKET", new String[]{"Account_has", "Market_Account"},
-                    "ACTORS", new String[]{"Stock_Actor", "Movie", "Contract"}
+                    "ACTORS", new String[]{"Stock_Actor", "Movie", "Contract"},
+                    "MOVIE-INFO", new String[]{"Review"}
             );
+            int review_id = 0;
             for(int i = 0; i < markers.length; i++) {
                 while(scanner.hasNextLine()) {
                     String line = scanner.nextLine();
@@ -53,6 +57,9 @@ public class DataInput {
                 while(!line.trim().isEmpty()) {
                     line = scanner.nextLine();
                     String[] values = line.split(",");
+                    if(i == 5) {
+                        review_id++;
+                    }
                     if(line.trim().isEmpty()) break;
                     String[] tableName = markers_mapping.get(markers[i]);
                     for(int j = 0; j < tableName.length; j++) {
@@ -74,13 +81,22 @@ public class DataInput {
                             indices = new int[]{0,1};
                             correctParameters = reorder(parameters, indices);
                             correctValues = reorder(values, indices);
-                        } else if(i==3) {
-                            int n = parameters.length;
-                            correctParameters = Arrays.copyOf(parameters, n + 1);
-                            correctParameters[n] =  "acc_id";
-                            correctValues = Arrays.copyOf(values, n + 1);
-                            int tax_id = Integer.parseInt(correctValues[0]);
-                            correctValues[n] = Integer.toString(TraderInterface.getAccountId(tax_id,connection));
+                        } else if(i == 3){
+                            if(j == 0) {
+                                parameters[0] = "tax_id";
+                                values[0] = usernameToTax_id(connection, values[0]);
+                                indices = new int[]{0,1};
+                                correctParameters = reorder(parameters, indices);
+                                correctValues = reorder(values, indices);
+                            } else {
+                                correctParameters = parameters;
+                                correctValues = values;
+                            }
+                        } else if(i == 5) {
+                            correctParameters = Arrays.copyOf(parameters, parameters.length + 1);
+                            correctParameters[correctParameters.length - 1] = "id";
+                            correctValues = Arrays.copyOf(values, values.length + 1);
+                            correctValues[correctValues.length - 1] = String.valueOf(review_id);
                         } else {
                             correctParameters = parameters;
                             correctValues = values;
@@ -177,10 +193,62 @@ public class DataInput {
         String[] newArray = new String[indices.length];
         for (int i = 0; i < indices.length; i++) {
             newArray[i] = originalArray[indices[i]];
-
         }
         return newArray;
     }
+    public static String usernameToTax_id(OracleConnection connection, String username) {
+        String selectQuery = "SELECT tax_id FROM Customer WHERE username = '" + username + "'";
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if (resultSet.next()) {
+                int tax_id = resultSet.getInt("tax_id");
+                String str_tax_id = String.valueOf(tax_id);
+                return str_tax_id;
+            } 
+        } catch (SQLException e) {e.printStackTrace();}
+        System.out.println("Sorry, could not find a tax id associated with that username.");
+        return "-1";
+    }
+    // public static int createReview(OracleConnection connection, int tax_id){
+    //     int transaction_id = 0;
+    //     while(true){
+    //         Random random = new Random();
+    //         transaction_id = random.nextInt(Integer.MAX_VALUE);
+    //         String selectQuery = "SELECT * FROM Transactions WHERE tid = " + Integer.toString(transaction_id);
+    //         try (Statement statement = connection.createStatement()) {
+    //             ResultSet resultSet = statement.executeQuery(selectQuery);
+    //             if (resultSet.next()) {
+    //                 continue;
+    //             }
+    //             else{
+    //                 break;
+    //             }
+    //         } catch (SQLException e) {
+    //             e.printStackTrace();
+    //         }
+    //     }
+    //     System.out.println("Generated Transaction Key: " + transaction_id);
+    //     String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
+
+    //     Date date = Demo.getDateSQLFriendly(connection);
+    //     //Date date = new Date(System.currentTimeMillis());
+    //     try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+    //         preparedStatement.setInt(1, transaction_id);
+    //         preparedStatement.setDate(2, date);
+
+    //         int rowsAffected = preparedStatement.executeUpdate();
+    //         if (rowsAffected > 0) {
+    //             System.out.println("Transaction created successfully!");
+    //         } else {
+    //             System.out.println("Transaction creation failed.");
+    //         }
+    //     } catch (SQLException e) {
+    //         System.out.println("Transaction Account creation failed.");
+    //         e.printStackTrace();
+    //     }
+    //     insertIntoCommits(connection, transaction_id, tax_id);
+    //     return(transaction_id);
+    // }
 }
 
 
