@@ -290,7 +290,7 @@ public class TraderInterface {
     }
 
     private static void createWithdrawTransaction(OracleConnection connection, double amount, int tax_id){
-        int transaction_id = createTransaction(connection, tax_id);
+        int transaction_id = createTransaction(connection, tax_id, 0);
         String insertQuery = "INSERT INTO Withdraw (tid, amount) VALUES (?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
@@ -661,7 +661,7 @@ public class TraderInterface {
 
     String addToSell = "INSERT INTO Sell (tid, symbol, sell_price, shares) VALUES (?, ?, ?, ?)";
 
-    int transaction_id = createTransaction(connection, tax_id);
+    int transaction_id = createTransaction(connection, tax_id, 0);
 
     try (PreparedStatement preparedStatement = connection.prepareStatement(addToSell)) {
         preparedStatement.setInt(1, transaction_id);
@@ -728,7 +728,7 @@ public class TraderInterface {
     private static void createSellTransaction(OracleConnection connection, int numShares, String symbol, double price, int tax_id){
         String insertQuery = "INSERT INTO Sell (tid, shares, sell_price, symbol) VALUES (?, ?, ?, ?)";
 
-        int transaction_id = createTransaction(connection, tax_id);
+        int transaction_id = createTransaction(connection, tax_id, 0);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setDouble(1, transaction_id);
@@ -776,7 +776,7 @@ public class TraderInterface {
     private static void createBuyTransaction(OracleConnection connection, int numShares, String symbol, double price, int tax_id){
         String insertQuery = "INSERT INTO Buy (tid, shares, buy_price, symbol) VALUES (?, ?, ?, ?)";
 
-        int transaction_id = createTransaction(connection, tax_id);
+        int transaction_id = createTransaction(connection, tax_id, 0);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setDouble(1, transaction_id);
@@ -797,7 +797,7 @@ public class TraderInterface {
     }
 
     private static void createDepositTransaction(OracleConnection connection, double amount, int tax_id){
-        int transaction_id = createTransaction(connection, tax_id);
+        int transaction_id = createTransaction(connection, tax_id, 0);
         String insertQuery = "INSERT INTO Deposit (tid, amount) VALUES (?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
@@ -815,7 +815,7 @@ public class TraderInterface {
         }
     }
 
-    public static int createTransaction(OracleConnection connection, int tax_id){
+    public static int createTransaction(OracleConnection connection, int tax_id,int flag){
         int transaction_id = 0;
         while(true){
             Random random = new Random();
@@ -833,7 +833,7 @@ public class TraderInterface {
                 e.printStackTrace();
             }
         }
-        System.out.println("Generated Transaction Key: " + transaction_id);
+        if(flag == 0) System.out.println("Generated Transaction Key: " + transaction_id);
         String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
 
         Date date = Demo.getDateSQLFriendly(connection);
@@ -844,20 +844,20 @@ public class TraderInterface {
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Transaction created successfully!");
+                if(flag == 0) System.out.println("Transaction created successfully!");
             } else {
-                System.out.println("Transaction creation failed.");
+                if(flag == 0) System.out.println("Transaction creation failed.");
             }
         } catch (SQLException e) {
-            System.out.println("Transaction Account creation failed.");
+            if(flag == 0) System.out.println("Transaction Account creation failed.");
             e.printStackTrace();
         }
-        insertIntoCommits(connection, transaction_id, tax_id);
+        insertIntoCommits(connection, transaction_id, tax_id,flag);
         
         return(transaction_id);
     }
 
-    public static void insertIntoCommits(OracleConnection connection, int transaction_id, int tax_id){
+    public static void insertIntoCommits(OracleConnection connection, int transaction_id, int tax_id, int flag){
         String insertQuery = "INSERT INTO Commits (acc_id, tid, tax_id) VALUES (?, ?, ?)";
         int acc_id = getAccountId(tax_id, connection);
 
@@ -868,12 +868,12 @@ public class TraderInterface {
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Commit created successfully!");
+                if(flag == 0) System.out.println("Commit created successfully!");
             } else {
-                System.out.println("Commit creation failed.");
+                if(flag == 0) System.out.println("Commit creation failed.");
             }
         } catch (SQLException e) {
-            System.out.println("Commit creation failed.");
+            if(flag == 0) System.out.println("Commit creation failed.");
             e.printStackTrace();
         }
     }
