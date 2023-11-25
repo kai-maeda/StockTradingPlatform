@@ -213,7 +213,6 @@ public class ManagerInterface {
                     int acc_id = resultSet2.getInt("acc_id");
                     ResultSet resultSet3 = statement.executeQuery(selectQuery3);
                     System.out.println("Here is the customer you were searching for!");
-                    System.out.println("=======================================================================================================================");
                     System.out.println("State ID: " + state_id );
                     System.out.println("Tax ID: " + tax_id);
                     System.out.println("Customer Name: " + cname);
@@ -226,7 +225,6 @@ public class ManagerInterface {
                     System.out.println("Balance: $" + balance_format);
                     System.out.println("=======================================================================================================================");
                     System.out.println("Here are the stocks that they own!");
-                    System.out.println("=======================================================================================================================");
                     while(resultSet3.next()) {
                         String symbol = resultSet3.getString("symbol").trim();
                         int num_share = resultSet3.getInt("num_share");

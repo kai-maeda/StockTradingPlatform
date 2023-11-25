@@ -49,6 +49,7 @@ public class StartupOptions {
                 break;
             case 0:
                 System.out.println("Exiting...");
+                System.out.println("=======================================================================================================================");
                 System.exit(0);
                 break;
             default:

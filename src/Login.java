@@ -53,11 +53,11 @@ public class Login {
             try {
                 System.out.print("Enter your username: ");
                 String username = scanner.nextLine();
-                System.out.println("Username: " + username);
+                // System.out.println("Username: " + username);
     
                 System.out.print("Enter your password: ");
                 String password = scanner.nextLine();
-                System.out.println("Password: " + password);
+                // System.out.println("Password: " + password);
 
                 String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'" + " AND password = " + "'" + password + "'";
     
@@ -85,11 +85,11 @@ public class Login {
             try {
                 System.out.print("Enter your username: ");
                 String username = scanner.nextLine();
-                System.out.println("Username: " + username);
+                // System.out.println("Username: " + username);
     
                 System.out.print("Enter your password: ");
                 String password = scanner.nextLine();
-                System.out.println("Password: " + password);
+                // System.out.println("Password: " + password);
 
                 String selectQuery = "SELECT * FROM Manager WHERE username = " + "'" + username + "'" + " AND password = " + "'" + password + "'";
     

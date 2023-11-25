@@ -63,6 +63,7 @@ public class TraderInterface {
         int accountId = getAccountId(tax_id, connection);
 
         while (true) {
+            System.out.println("=======================================================================================================================");
             System.out.println("Trader Interface Options:");
             System.out.println("1. Deposit");
             System.out.println("2. Withdraw");
@@ -75,10 +76,12 @@ public class TraderInterface {
             System.out.println("9. Movie Information");
             System.out.println("10. List all Reviews for Movie");
             System.out.println("0. Exit");
+            System.out.println("=======================================================================================================================");
 
             System.out.print("Enter your choice (0-10): ");
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consume the newline
+            System.out.println("=======================================================================================================================");
 
             switch (choice) {
                 case 1:
