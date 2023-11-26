@@ -1285,7 +1285,7 @@ public class TraderInterface {
         return true;
     }
 
-    public static boolean have20(OracleConnection, tax_id, acc_id){
+    public static boolean have20(OracleConnection connection, int tax_id, int acc_id){
         if(getBalance(connection, acc_id) < 20){
             System.out.println("You need at least $20 to execute this transaction.");
             return false;
