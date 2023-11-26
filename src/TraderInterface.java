@@ -364,7 +364,7 @@ public class TraderInterface {
                 System.out.println("Invalid input. Number of shares must be greater than zero.");
                 return;
             }
-            double totalCost = stockPrice * numShares;
+            double totalCost = stockPrice * numShares + 20;
             double balance = getBalance(connection, acc_id);
             if(totalCost >= balance) {
                 System.out.println("Insufficient funds. Your current balance is: " + balance);
