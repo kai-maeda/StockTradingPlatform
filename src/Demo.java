@@ -42,6 +42,7 @@ public class Demo {
             System.out.println("2. Close Market");
             System.out.println("3. Go to Next Day");
             System.out.println("4. Change Stock Price");
+            System.out.println("5. Change Date");
             System.out.println("0. Exit");
             System.out.println("=======================================================================================================================");
 
@@ -49,10 +50,10 @@ public class Demo {
 
             while (true) {
                 try {
-                    System.out.print("Enter your choice (0-4): ");
+                    System.out.print("Enter your choice (0-5): ");
                     choice = scanner.nextInt();
 
-                    if (choice >= 0 && choice <= 4) {
+                    if (choice >= 0 && choice <= 5) {
                         break; // Valid input, exit the loop
                     } else {
                         System.out.println("Invalid input. Please enter a number between 1 and 3.");
@@ -79,6 +80,8 @@ public class Demo {
                 case 4: 
                     promptChangeStockPrice(connection, scanner);
                     break;
+                case 5: 
+                    //promptDateChange(connection, scanner);
                 case 0: 
                     System.out.println("Exiting Demo Interface");
                     StartupOptions.main2(connection);
@@ -276,5 +279,45 @@ public class Demo {
             e.printStackTrace();
         }
     }
+
+    /* 
+    public void promptDateChange(OracleConnection connection, Scanner scanner){
+        System.out.println("Enter the date you want to change to (YYYY-MM-DD): ");
+        String date = scanner.nextLine();
+        int year = date.substring(0, 4);
+        int month = date.substring(5, 7);
+        int day = date.substring(8, 9);
+        if(day > 31 || day == 0){
+            System.out.println("Invalid Date: Date does not exist");
+            return;
+        }
+
+        
+        if(month == 1 || month == month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12){
+
+        }
+        
+        if(month == 4 || month == 6 || month == 9 || month == 11){
+            if(day == 31){
+                System.out.println("Invalid Date: Date does not exist");
+                return;
+            }
+        }
+        if(month == 2){
+            if(date > 29){
+                System.out.println("Invalid Date: Date does not exist");
+                return;
+            }
+            //not a leap year
+            if(year % 4 != 0 && year & 1000 != 0){
+                if(date > 28){
+                    System.out.println("Invalid Date: Date does not exist");
+                    return;
+                }
+            }
+        }
+    }
+    */
+    
 
 }

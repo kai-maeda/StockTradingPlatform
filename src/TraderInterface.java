@@ -69,7 +69,7 @@ public class TraderInterface {
             System.out.println("2. Withdraw");
             System.out.println("3. Buy");
             System.out.println("4. Sell");
-            System.out.println("5. Cancel");
+            System.out.println("5. Cancel Last Transaction");
             System.out.println("6. Show Balance");
             System.out.println("7. Show Transaction History");
             System.out.println("8. List Current Stock Price");
@@ -97,7 +97,7 @@ public class TraderInterface {
                     sell(connection, scanner, accountId, tax_id);
                     break;
                 case 5:
-                    cancel();
+                    cancel(connection, scanner, accountId, tax_id);
                     break;
                 case 6:
                     showBalance(connection, accountId);
@@ -306,6 +306,7 @@ public class TraderInterface {
             System.out.println("ERROR: Withdraw Transaction creation failed.");
             e.printStackTrace();
         }
+        
     }
 
     public static double getStockPrice(OracleConnection connection, String symbol) {
@@ -489,9 +490,9 @@ public class TraderInterface {
 
     }
 
-    private static void printAllShares(String symbol, OracleConnection connection){
+    private static void printAllShares(String symbol, OracleConnection connection, int tax_id){
         System.out.println("All Owned Shares of " + symbol + ":");
-        String selectQuery = "SELECT * FROM Bought_Stock WHERE symbol = " + "'" + symbol + "'";
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE symbol = " + "'" + symbol + "'" + " AND tax_id = " + Integer.toString(tax_id);
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectQuery);
             while(resultSet.next()){
@@ -512,7 +513,7 @@ public class TraderInterface {
         System.out.println("Enter the symbol of the stock you would like to sell: ");
         String symbol = scanner.nextLine();
         double stockPrice = getStockPrice(connection, symbol);
-        printAllShares(symbol, connection);
+        printAllShares(symbol, connection, tax_id);
         if(stockPrice == -1.0) {
             System.out.println("Stock does not exist.");
             return;
@@ -719,6 +720,18 @@ public class TraderInterface {
             System.out.println("ERROR: Sell_leg creation failed.");
             e.printStackTrace();
         }
+        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(total) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+                    try (Statement statement2 = connection.createStatement()) {
+                        int rowsAffected = statement2.executeUpdate(updateQuery);
+                        if (rowsAffected > 0) {
+                            System.out.println("Update Stock Account successful!");
+                        } else {
+                            System.out.println("Update Stock Account failed.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("ERROR: Update Stock Account failed.");
+                        e.printStackTrace();
+                    }
 
     }
 
@@ -748,10 +761,150 @@ public class TraderInterface {
         }
     }
 
-    private static void cancel() {
+    private static void cancel(OracleConnection connection, Scanner scanner, int acc_id, int tax_id) {
         // Implement cancel logic
         System.out.println("Cancel option selected.");
+        int last_tid = -1;
+        String selectQuery = "SELECT * FROM Customer WHERE tax_id = " + Integer.toString(tax_id);
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()){
+                last_tid = resultSet.getInt("last_tid");
+            }
+            else{
+                System.out.println("Sorry, You have no transaction to cancel.");
+                return;
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+        String selectFromBuys = "SELECT * FROM Buy WHERE tid = " + Integer.toString(last_tid);
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectFromBuys);
+            if(resultSet.next()){
+                int shares = resultSet.getInt("shares");
+                String symbol = resultSet.getString("symbol");
+                double buy_price = resultSet.getDouble("buy_price");
+                System.out.println("Your last transaction was a buy of " + shares + " shares of " + symbol + " at a price of " + buy_price);
+                System.out.println("Would you like to cancel this transaction? Type Y to cancel, type anything else to exit.");
+                String answer = scanner.nextLine();
+                if(answer.equalsIgnoreCase("Y")){
+                    String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(shares) + ", balance_share = balance_share - " + Double.toString(shares * buy_price) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+                    try (Statement statement2 = connection.createStatement()) {
+                        int rowsAffected = statement2.executeUpdate(updateStockAccount);
+                        if (rowsAffected > 0) {
+                            System.out.println("Update Stock Account successful!");
+                        } else {
+                            System.out.println("Update Stock Account failed.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("ERROR: Update Stock Account failed.");
+                        e.printStackTrace();
+                    }
+
+                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(shares) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(buy_price);
+                    try (Statement statement2 = connection.createStatement()) {
+                        int rowsAffected = statement2.executeUpdate(updateBought_Stock);
+                        if (rowsAffected > 0) {
+                            System.out.println("Update Bought_Stock successful!");
+                        } else {
+                            System.out.println("Update Bought_Stock failed.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("ERROR: Update Bought_Stock failed.");
+                        e.printStackTrace();
+                    }
+                }
+                String insertIntoCancel = "INSERT INTO Cancels (tid, ptid) VALUES (?, ?)";
+                int transaction_id = createTransaction(connection, tax_id, 0);
+                try (PreparedStatement preparedStatement = connection.prepareStatement(insertIntoCancel)) {
+                    preparedStatement.setInt(1, transaction_id);
+                    preparedStatement.setInt(2, last_tid);
+        
+                    int rowsAffected = preparedStatement.executeUpdate();
+                    if (rowsAffected > 0) {
+                        System.out.println("Cancel Transaction created successfully!");
+                    } else {
+                        System.out.println("Cancel Transaction creation failed.");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("ERROR: Cancel Transaction creation failed.");
+                    e.printStackTrace();
+                }
+                depositSQL(shares * buy_price, connection, acc_id);
+                return;
+            }
+        }
+        catch(SQLException e){
+            System.out.println("ERROR: Not a Buy Transaction");
+        }
+        String selectFromSells = "SELECT * FROM Sell WHERE tid = " + Integer.toString(last_tid);
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectFromSells);
+            if(resultSet.next()){
+                int shares = resultSet.getInt("shares");
+                String symbol = resultSet.getString("symbol");
+                double sell_price = resultSet.getDouble("sell_price");
+                System.out.println("Your last transaction was a sell of " + shares + " shares of " + symbol + " at a price of " + sell_price);
+                System.out.println("Would you like to cancel this transaction? Type Y to cancel, type anything else to exit.");
+                String answer = scanner.nextLine();
+                if(answer.equalsIgnoreCase("Y")){
+                    String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(shares) + ", balance_share = balance_share + " + Double.toString(shares * sell_price) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "'";
+                    try (Statement statement2 = connection.createStatement()) {
+                        int rowsAffected = statement2.executeUpdate(updateStockAccount);
+                        if (rowsAffected > 0) {
+                            System.out.println("Update Stock Account successful!");
+                        } else {
+                            System.out.println("Update Stock Account failed.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("ERROR: Update Stock Account failed.");
+                        e.printStackTrace();
+                    }
+
+                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(shares) + " WHERE tax_id = " + Integer.toString(tax_id) + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_price);
+                    try (Statement statement2 = connection.createStatement()) {
+                        int rowsAffected = statement2.executeUpdate(updateBought_Stock);
+                        if (rowsAffected > 0) {
+                            System.out.println("Update Bought_Stock successful!");
+                        } else {
+                            System.out.println("Update Bought_Stock failed.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("ERROR: Update Bought_Stock failed.");
+                        e.printStackTrace();
+                    }
+                }
+                String insertIntoCancel = "INSERT INTO Cancels (tid, ptid) VALUES (?, ?)";
+                int transaction_id = createTransaction(connection, tax_id, 0);
+                try (PreparedStatement preparedStatement = connection.prepareStatement(insertIntoCancel)) {
+                    preparedStatement.setInt(1, transaction_id);
+                    preparedStatement.setInt(2, last_tid);
+        
+                    int rowsAffected = preparedStatement.executeUpdate();
+                    if (rowsAffected > 0) {
+                        System.out.println("Cancel Transaction created successfully!");
+                    } else {
+                        System.out.println("Cancel Transaction creation failed.");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("Error: Cancel Transaction failed.");
+                }
+                withdrawSQL(shares * sell_price, connection, acc_id);
+                return;
+            }
+        }
+        catch(SQLException e){
+            System.out.println("ERROR: Not a Sell Transaction");
+        }
+
+        System.out.println("You cannot cancel your previous transaction. You cannot cancel an accure interest or cancel transaction or cancel a transaction at the beginning of the month.");
+        
+
     }
+
+
 
     private static void showBalance(OracleConnection connection, int acc_id) {
         // Implement show balance logic
@@ -852,7 +1005,24 @@ public class TraderInterface {
             if(flag == 0) System.out.println("Transaction Account creation failed.");
             e.printStackTrace();
         }
-        insertIntoCommits(connection, transaction_id, tax_id,flag);
+        insertIntoCommits(connection, transaction_id, tax_id, 0);
+
+        String modifyCustomerTid = "UPDATE Customer SET last_tid = ? WHERE tax_id = ?";
+        try(PreparedStatement preparedStatement = connection.prepareStatement(modifyCustomerTid)){
+            preparedStatement.setInt(1, transaction_id);
+            preparedStatement.setInt(2, tax_id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Modify Customer successful!");
+            } else {
+                System.out.println("Modify Customer failed.");
+            }
+        }
+        catch(SQLException e){
+            System.out.println("ERROR: Modify Customer failed.");
+            e.printStackTrace();
+        }
         
         return(transaction_id);
     }
