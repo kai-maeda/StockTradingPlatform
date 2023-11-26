@@ -528,6 +528,9 @@ public class TraderInterface {
     private static void sell(OracleConnection connection, Scanner scanner , int acc_id, int tax_id) {
         // Implement sell logic
         System.out.println("Sell option selected.");
+        if(have20(connection, tax_id, acc_id) == false){
+            return;
+        }
         System.out.println("Enter the symbol of the stock you would like to sell: ");
         String symbol = scanner.nextLine();
         double stockPrice = getStockPrice(connection, symbol);
@@ -782,6 +785,9 @@ public class TraderInterface {
     private static void cancel(OracleConnection connection, Scanner scanner, int acc_id, int tax_id) {
         // Implement cancel logic
         System.out.println("Cancel option selected.");
+        if(have20(connection, tax_id, acc_id) == false){
+            return;
+        }
         int last_tid = -1;
         String selectQuery = "SELECT * FROM Customer WHERE tax_id = " + Integer.toString(tax_id);
         try(Statement statement = connection.createStatement()){
@@ -1274,6 +1280,14 @@ public class TraderInterface {
     public static boolean isOpen(OracleConnection connection){
         if(Demo.isOpen(connection) == false){
             System.out.println("Market is closed. Wait until market is open");
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean have20(OracleConnection, tax_id, acc_id){
+        if(getBalance(connection, acc_id) < 20){
+            System.out.println("You need at least $20 to execute this transaction.");
             return false;
         }
         return true;
