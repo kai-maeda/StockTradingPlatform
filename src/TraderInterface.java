@@ -85,18 +85,33 @@ public class TraderInterface {
 
             switch (choice) {
                 case 1:
+                    if(isOpen(connection) == false){
+                        break;
+                    }
                     deposit(scanner, connection, accountId, tax_id);
                     break;
                 case 2:
+                    if(isOpen(connection) == false){
+                        break;
+                    }
                     withdraw(scanner, connection, accountId, tax_id);
                     break;
                 case 3:
+                if(isOpen(connection) == false){
+                        break;
+                    }
                     buy(connection, scanner, accountId, tax_id);
                     break;
                 case 4:
+                if(isOpen(connection) == false){
+                        break;
+                    }
                     sell(connection, scanner, accountId, tax_id);
                     break;
                 case 5:
+                if(isOpen(connection) == false){
+                        break;
+                    }
                     cancel(connection, scanner, accountId, tax_id);
                     break;
                 case 6:
@@ -106,6 +121,9 @@ public class TraderInterface {
                     showTransactionHistory(connection, tax_id);
                     break;
                 case 8:
+                if(isOpen(connection) == false){
+                        break;
+                    }
                     listStockPrice(connection, scanner);
                     break;
                 case 9:
@@ -1252,6 +1270,14 @@ public class TraderInterface {
     }
 
     //declare helper functions to print transactions
+
+    public static boolean isOpen(OracleConnection connection){
+        if(Demo.isOpen(connection) == false){
+            System.out.println("Market is closed. Wait until market is open");
+            return false;
+        }
+        return true;
+    }
     
 
 }
