@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.Random;
 
@@ -75,10 +76,11 @@ public class TraderInterface {
             System.out.println("8. List Current Stock Price");
             System.out.println("9. Movie Information");
             System.out.println("10. List all Reviews for Movie");
+            System.out.println("11. Top 10 Movies");
             System.out.println("0. Exit");
             System.out.println("=======================================================================================================================");
 
-            System.out.print("Enter your choice (0-10): ");
+            System.out.print("Enter your choice (0-11): ");
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consume the newline
             System.out.println("=======================================================================================================================");
@@ -131,6 +133,9 @@ public class TraderInterface {
                     break;
                 case 10:
                     listAllReviews(connection, scanner);
+                    break;
+                case 11: 
+                    topMovies(connection, scanner);
                     break;
                 case 0:
                     System.out.println("Exiting Trader Interface.");
@@ -1293,6 +1298,61 @@ public class TraderInterface {
             return false;
         }
         return true;
+    }
+
+    public static void topMovies(OracleConnection connection, Scanner scanner){
+        System.out.println("Top Movies option selected.");
+        System.out.println("Enter the start year to search");
+        int start_year = 0;
+        while (true) {
+            System.out.print("Type the start year: ");
+            try {
+                start_year = Integer.parseInt(scanner.nextLine());
+                break;  // Exit the loop if the input is a valid integer
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer. Try again.");
+            }
+        }
+        System.out.println("Enter the end year to search");
+        int end_year = 0;
+        while (true) {
+            System.out.print("Type the end year: ");
+            try {
+                end_year = Integer.parseInt(scanner.nextLine());
+                break;  // Exit the loop if the input is a valid integer
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer. Try again.");
+            }
+        }
+        if(start_year > end_year){
+            System.out.println("Start year must be less than or equal to end year.");
+            return;
+        }
+        if(start_year < 0 || end_year < 0){
+            System.out.println("Start year and end year must be greater than or equal to zero.");
+            return;
+        }
+        String selectQuery = "SELECT * FROM Review WHERE movie_year >= " + Integer.toString(start_year) + " AND movie_year <= " + Integer.toString(end_year) + "AND rating = 10";
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            HashMap<String, Integer> uniqueMovies = new HashMap<>();
+            int count = 1;
+            while(resultSet.next()){
+                String movieTitle = resultSet.getString("title");
+                int movieYear = resultSet.getInt("movie_year");
+                String movieKey = movieTitle + " " + movieYear;
+
+                // Check if the movie is not already in the HashMap
+        if (!uniqueMovies.containsKey(movieKey)) {
+            System.out.println("Movie: " + movieTitle + " " + movieYear);
+            uniqueMovies.put(movieKey, 1);
+        }
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+
     }
     
 
