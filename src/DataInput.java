@@ -78,13 +78,17 @@ public class DataInput {
                             correctValues = reorder(values, indices);
                         }
                         else if(i == 2 && j == 0) {
+                            parameters[0] = "username";
+                            values[0] = tax_idToUsername(connection, values[0]);
                             indices = new int[]{0,1};
                             correctParameters = reorder(parameters, indices);
                             correctValues = reorder(values, indices);
+                            // else {
+                            // //     correctParameters = parameters;
+                            // //     correctValues = reorder(values, indices);
+                            // // }
                         } else if(i == 3){
                             if(j == 0) {
-                                parameters[0] = "tax_id";
-                                values[0] = usernameToTax_id(connection, values[0]);
                                 indices = new int[]{0,1};
                                 correctParameters = reorder(parameters, indices);
                                 correctValues = reorder(values, indices);
@@ -197,59 +201,18 @@ public class DataInput {
         }
         return newArray;
     }
-    public static String usernameToTax_id(OracleConnection connection, String username) {
-        String selectQuery = "SELECT tax_id FROM Customer WHERE username = '" + username + "'";
+    public static String tax_idToUsername(OracleConnection connection, String tax_id) {
+        String selectQuery = "SELECT username FROM Customer WHERE tax_id = '" + tax_id + "'";
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if (resultSet.next()) {
-                int tax_id = resultSet.getInt("tax_id");
-                String str_tax_id = String.valueOf(tax_id);
-                return str_tax_id;
+                String username = resultSet.getString("username").trim();
+                return username;
             } 
         } catch (SQLException e) {e.printStackTrace();}
-        System.out.println("Sorry, could not find a tax id associated with that username.");
+        System.out.println("Sorry, could not find a username associated with that tax ID.");
         return "-1";
     }
-    // public static int createReview(OracleConnection connection, int tax_id){
-    //     int transaction_id = 0;
-    //     while(true){
-    //         Random random = new Random();
-    //         transaction_id = random.nextInt(Integer.MAX_VALUE);
-    //         String selectQuery = "SELECT * FROM Transactions WHERE tid = " + Integer.toString(transaction_id);
-    //         try (Statement statement = connection.createStatement()) {
-    //             ResultSet resultSet = statement.executeQuery(selectQuery);
-    //             if (resultSet.next()) {
-    //                 continue;
-    //             }
-    //             else{
-    //                 break;
-    //             }
-    //         } catch (SQLException e) {
-    //             e.printStackTrace();
-    //         }
-    //     }
-    //     System.out.println("Generated Transaction Key: " + transaction_id);
-    //     String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
-
-    //     Date date = Demo.getDateSQLFriendly(connection);
-    //     //Date date = new Date(System.currentTimeMillis());
-    //     try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-    //         preparedStatement.setInt(1, transaction_id);
-    //         preparedStatement.setDate(2, date);
-
-    //         int rowsAffected = preparedStatement.executeUpdate();
-    //         if (rowsAffected > 0) {
-    //             System.out.println("Transaction created successfully!");
-    //         } else {
-    //             System.out.println("Transaction creation failed.");
-    //         }
-    //     } catch (SQLException e) {
-    //         System.out.println("Transaction Account creation failed.");
-    //         e.printStackTrace();
-    //     }
-    //     insertIntoCommits(connection, transaction_id, tax_id);
-    //     return(transaction_id);
-    // }
 }
 
 

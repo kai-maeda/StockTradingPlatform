@@ -95,7 +95,7 @@ public class ManagerInterface {
                 while(resultSet3.next()) {
                     float avg_balance = 0;
                     int acc_id = resultSet3.getInt("acc_id");
-                    int acc_username = resultSet3.getInt("username");
+                    String acc_username = resultSet3.getString("username");
                     int tid = TraderInterface.createTransaction(connection, acc_username,1);
                     String selectQuery4 = "SELECT T.* FROM Market_Account M, Temp_money T WHERE M.acc_id = T.acc_id AND M.acc_id = " + acc_id + 
                                             " AND EXTRACT(MONTH FROM T.balance_date) = EXTRACT(MONTH FROM TO_DATE('" + curr_date2 + "', 'yyyy-mm-dd')) ORDER BY T.balance_date DESC";
@@ -135,10 +135,10 @@ public class ManagerInterface {
         }
     }    
     public static void generateMonthlyStatement(OracleConnection connection, Scanner scanner) {
-        System.out.print("Please enter the tax ID associated with the customer that you would like to receive a general monthly statement for: ");
+        System.out.print("Please enter the username associated with the customer that you would like to receive a general monthly statement for: ");
         while(true) {
-            if(scanner.hasNextInt()) {
-                int correct_id = scanner.nextInt();
+            if(scanner.hasNext()) {
+                String correct_id = scanner.next();
                 System.out.println("=======================================================================================================================");
                 if(checkIfMarketAccountExists(connection, correct_id)) {
                     System.out.println("Sorry this person has not created a market account yet so there is no monthly statement to print.");
@@ -149,8 +149,8 @@ public class ManagerInterface {
             } else {
                 String wrong_id = scanner.next();
                 if("q".equalsIgnoreCase(wrong_id)) break;
-                System.out.println("Sorry, we could not find a customer associated with that tax ID.");
-                System.out.print("Please enter a new tax ID or type 'q' to return to Manager Interface: ");
+                System.out.println("Sorry, we could not find a customer associated with that username.");
+                System.out.print("Please enter a new username or type 'q' to return to Manager Interface: ");
             }
         }
 
@@ -192,14 +192,14 @@ public class ManagerInterface {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             System.out.println("Generating list of customers who have made more than $10,000 in the past month...");
             while(resultSet.next()) {
-                int username = resultSet.getInt("username");
+                String username = resultSet.getString("username").trim();
                 float total_earnings = generateListOfTransaction(connection, 1, username);
                 if(total_earnings >= 10000) {
                     String state_id = resultSet.getString("state_id").trim();
                     String cname = resultSet.getString("cname").trim();
                     String phone = resultSet.getString("phone").trim();
                     String email = resultSet.getString("email").trim();
-                    String username = resultSet.getString("username").trim();
+                    int tax_id = resultSet.getInt("tax_id");
                     String password = resultSet.getString("password").trim();
                     DecimalFormat df = new DecimalFormat("#.##");
                     String total_format = df.format(total_earnings);
@@ -211,10 +211,10 @@ public class ManagerInterface {
     }    
 
     public static void customerReport(OracleConnection connection, Scanner scanner) {
-        System.out.print("Please enter the tax ID associated with the customer that you would like to receive a customer report for: ");
+        System.out.print("Please enter the username associated with the customer that you would like to receive a customer report for: ");
         while(true) {
-            if(scanner.hasNextInt()) {
-                String correct_id = scanner.nextInt();
+            if(scanner.hasNext()) {
+                String correct_id = scanner.next();
                 System.out.println("=======================================================================================================================");
                 String selectQuery1 = "SELECT * FROM Customer WHERE username = " + correct_id;
                 String selectQuery2 = "SELECT * FROM Market_Account WHERE username = " + correct_id;
@@ -259,8 +259,8 @@ public class ManagerInterface {
             } else {
                 String wrong_id = scanner.next();
                 if("q".equalsIgnoreCase(wrong_id)) break;
-                System.out.println("Sorry, we could not find a customer associated with that tax ID.");
-                System.out.print("Please enter a new tax ID or type 'q' to return to Manager Interface: ");
+                System.out.println("Sorry, we could not find a customer associated with that username.");
+                System.out.print("Please enter a new username or type 'q' to return to Manager Interface: ");
             }
         }
         
@@ -298,7 +298,7 @@ public class ManagerInterface {
             }
         }
     }    
-    public static float generateListOfTransaction(OracleConnection connection, int flag, int username) {
+    public static float generateListOfTransaction(OracleConnection connection, int flag, String username) {
         String curr_date = Demo.getDate(connection,1);
         String[] types_trans = {"Buy", "Sell", "Withdraw", "Deposit", "Cancels", "Interests"};
         float total_earnings = 0;
@@ -379,7 +379,7 @@ public class ManagerInterface {
         } catch (SQLException e) {e.printStackTrace();}
         return money_earned;
     }
-    public static float getInitialAndFinalBalance(OracleConnection connection, int username, int flag) {
+    public static float getInitialAndFinalBalance(OracleConnection connection, String username, int flag) {
         String curr_date = Demo.getDate(connection,1);
         DecimalFormat df = new DecimalFormat("#.##");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
@@ -424,7 +424,7 @@ public class ManagerInterface {
         } catch (SQLException e) {e.printStackTrace();}
         return temp_balance;
     }
-    public static boolean checkIfMarketAccountExists(OracleConnection connection, int username) {
+    public static boolean checkIfMarketAccountExists(OracleConnection connection, String username) {
         String selectQuery = "SELECT * FROM Market_Account WHERE username = " + username;
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
