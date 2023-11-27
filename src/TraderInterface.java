@@ -150,7 +150,7 @@ public class TraderInterface {
 
     public static int getAccountId(String username, Connection connection) {
         int accountId = -1;
-        String selectQuery = "SELECT acc_id FROM Account_Has WHERE username = " + username;
+        String selectQuery = "SELECT acc_id FROM Market_Account WHERE username = " + username;
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if (resultSet.next()) {
