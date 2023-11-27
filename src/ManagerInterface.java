@@ -81,53 +81,59 @@ public class ManagerInterface {
         if(curr_date2.getDayOfMonth() == last_day) {
             String selectQuery1 = ("SELECT monthlyInterest " + 
                                     "FROM Manager " +  
-                                    "WHERE username = " + username);
+                                    "WHERE username = '" + username + "'");
             String selectQuery2 = "SELECT * " +
                                     "FROM Market_Account";
             String insertQuery1 = "INSERT INTO Interests (tid, monthly_interest) " +
                                     "VALUES (?, ?)";
             try(Statement statement = connection.createStatement()) {
                 ResultSet resultSet1 = statement.executeQuery(selectQuery1);
-                resultSet1.next();
-                float monthlyInterest = resultSet1.getFloat("monthlyInterest");
-
-                ResultSet resultSet3 = statement.executeQuery(selectQuery2);
-                while(resultSet3.next()) {
-                    float avg_balance = 0;
-                    int acc_id = resultSet3.getInt("acc_id");
-                    String acc_username = resultSet3.getString("username");
-                    int tid = TraderInterface.createTransaction(connection, acc_username,1);
-                    String selectQuery4 = "SELECT T.* FROM Market_Account M, Temp_money T WHERE M.acc_id = T.acc_id AND M.acc_id = " + acc_id + 
-                                            " AND EXTRACT(MONTH FROM T.balance_date) = EXTRACT(MONTH FROM TO_DATE('" + curr_date2 + "', 'yyyy-mm-dd')) ORDER BY T.balance_date DESC";
-                    float initial_balance = getInitialAndFinalBalance(connection,acc_username,1);
-                    try(Statement statement2 = connection.createStatement()) {
-                        ResultSet resultSet4 = statement2.executeQuery(selectQuery4);
-                        int prev_day = last_day;
-                        while(resultSet4.next()) {
-                            java.sql.Date balance_date = resultSet4.getDate("balance_date");
-                            LocalDate fixed_balance_date = balance_date.toLocalDate();
-                            float temp_balance = resultSet4.getFloat("temp_balance");
-                            Month temp_month  = fixed_balance_date.getMonth();
-                            int temp_day = fixed_balance_date.getDayOfMonth();
-                            avg_balance += (prev_day-temp_day+1)* temp_balance;
-                        }
-                        resultSet4.close();
-                        avg_balance += (prev_day) * initial_balance;
-                    } 
-                    avg_balance /= last_day;
-                    String updateQuery1 = ("UPDATE Market_Account " + 
-                                        "SET balance = " + avg_balance + " + " + avg_balance + " * " + monthlyInterest +
-                                        " WHERE acc_id = " + acc_id);
-                    try(Statement statement3 = connection.createStatement()) {
-                        statement3.executeUpdate(updateQuery1);
-                    }
-                    try(PreparedStatement preparedStatement = connection.prepareStatement(insertQuery1)){
-                        preparedStatement.setInt(1, tid);
-                        preparedStatement.setFloat(2,avg_balance * monthlyInterest);
-                        preparedStatement.executeUpdate();
-                    }
+                float monthlyInterest;
+                if(resultSet1.next()) {
+                    monthlyInterest = resultSet1.getFloat("monthlyInterest");
+                    resultSet1.close();
+                } else {
+                    monthlyInterest = 0.01f;
                 }
-                resultSet3.close();
+                try(Statement statement4 = connection.createStatement()) {
+                    ResultSet resultSet3 = statement4.executeQuery(selectQuery2);
+                    while(resultSet3.next()) {
+                        float avg_balance = 0;
+                        int acc_id = resultSet3.getInt("acc_id");
+                        String acc_username = resultSet3.getString("username");
+                        int tid = TraderInterface.createTransaction(connection, acc_username,1);
+                        String selectQuery4 = "SELECT T.* FROM Market_Account M, Temp_money T WHERE M.acc_id = T.acc_id AND M.acc_id = " + acc_id + 
+                                                " AND EXTRACT(MONTH FROM T.balance_date) = EXTRACT(MONTH FROM TO_DATE('" + curr_date2 + "', 'yyyy-mm-dd')) ORDER BY T.balance_date DESC";
+                        float initial_balance = getInitialAndFinalBalance(connection,acc_username,1);
+                        try(Statement statement2 = connection.createStatement()) {
+                            ResultSet resultSet4 = statement2.executeQuery(selectQuery4);
+                            int prev_day = last_day;
+                            while(resultSet4.next()) {
+                                java.sql.Date balance_date = resultSet4.getDate("balance_date");
+                                LocalDate fixed_balance_date = balance_date.toLocalDate();
+                                float temp_balance = resultSet4.getFloat("temp_balance");
+                                Month temp_month  = fixed_balance_date.getMonth();
+                                int temp_day = fixed_balance_date.getDayOfMonth();
+                                avg_balance += (prev_day-temp_day+1)* temp_balance;
+                            }
+                            resultSet4.close();
+                            avg_balance += (prev_day) * initial_balance;
+                        } 
+                        avg_balance /= last_day;
+                        String updateQuery1 = ("UPDATE Market_Account " + 
+                                            "SET balance = " + avg_balance + " + " + avg_balance + " * " + monthlyInterest +
+                                            " WHERE acc_id = " + acc_id);
+                        try(Statement statement3 = connection.createStatement()) {
+                            statement3.executeUpdate(updateQuery1);
+                        }
+                        try(PreparedStatement preparedStatement = connection.prepareStatement(insertQuery1)){
+                            preparedStatement.setInt(1, tid);
+                            preparedStatement.setFloat(2,avg_balance * monthlyInterest);
+                            preparedStatement.executeUpdate();
+                        }
+                    }
+                    resultSet3.close();
+                }
                 System.out.println("Added monthly interest rate of " + monthlyInterest + " to all customer market accounts!");
             }  catch (SQLException e) {e.printStackTrace();}
         } else {
@@ -215,44 +221,57 @@ public class ManagerInterface {
         while(true) {
             if(scanner.hasNext()) {
                 String correct_id = scanner.next();
+                if(doesCustomerExist(connection, correct_id) == false) {
+                    System.out.println("Sorry, we could not find a customer associated with that username.");
+                    System.out.print("Please enter a new username or type 'q' to return to Manager Interface: ");
+                    continue;
+                }
                 System.out.println("=======================================================================================================================");
-                String selectQuery1 = "SELECT * FROM Customer WHERE username = " + correct_id;
-                String selectQuery2 = "SELECT * FROM Market_Account WHERE username = " + correct_id;
-                String selectQuery3 = "SELECT * FROM Stock_Account WHERE username = " + correct_id;
+                String selectQuery1 = "SELECT * FROM Customer WHERE username = '" + correct_id + "'";
+                String selectQuery2 = "SELECT * FROM Market_Account WHERE username = '" + correct_id + "'";
+                String selectQuery3 = "SELECT * FROM Stock_Account WHERE username = '" + correct_id + "'";
                 try(Statement statement = connection.createStatement()) {
                     ResultSet resultSet1 = statement.executeQuery(selectQuery1);
-                    resultSet1.next();
-                    String state_id = resultSet1.getString("state_id").trim();
-                    int tax_id = resultSet1.getInt("tax_id");
-                    String cname = resultSet1.getString("cname").trim();
-                    String phone = resultSet1.getString("phone").trim();
-                    String email = resultSet1.getString("email").trim();
-                    String username = resultSet1.getString("username").trim();
-                    String password = resultSet1.getString("password").trim();
-                    ResultSet resultSet2 = statement.executeQuery(selectQuery2);
-                    resultSet2.next();
-                    float balance = resultSet2.getFloat("balance");
-                    DecimalFormat df = new DecimalFormat("#.##");
-                    String balance_format = df.format(balance);
-                    int acc_id = resultSet2.getInt("acc_id");
-                    ResultSet resultSet3 = statement.executeQuery(selectQuery3);
-                    System.out.println("Here is the customer you were searching for!");
-                    System.out.println("State ID: " + state_id );
-                    System.out.println("Tax ID: " + tax_id);
-                    System.out.println("Customer Name: " + cname);
-                    System.out.println("Phone Number: " + phone);
-                    System.out.println("Email: " + email);
-                    System.out.println("Username: " + username);
-                    System.out.println("Password: " + password);
+                    if(resultSet1.next()) {
+                        String state_id = resultSet1.getString("state_id").trim();
+                        int tax_id = resultSet1.getInt("tax_id");
+                        String cname = resultSet1.getString("cname").trim();
+                        String phone = resultSet1.getString("phone").trim();
+                        String email = resultSet1.getString("email").trim();
+                        String username = resultSet1.getString("username").trim();
+                        String password = resultSet1.getString("password").trim();
+                        System.out.println("Here is the customer you were searching for!");
+                        System.out.println("State ID: " + state_id );
+                        System.out.println("Tax ID: " + tax_id);
+                        System.out.println("Customer Name: " + cname);
+                        System.out.println("Phone Number: " + phone);
+                        System.out.println("Email: " + email);
+                        System.out.println("Username: " + username);
+                        System.out.println("Password: " + password);
+                    }
                     System.out.println("=======================================================================================================================");
-                    System.out.println("Market Account ID: " + acc_id);
-                    System.out.println("Balance: $" + balance_format);
+                    try(Statement statement2 = connection.createStatement()) {
+                        ResultSet resultSet2 = statement2.executeQuery(selectQuery2);
+                        if(resultSet2.next()) {
+                            float balance = resultSet2.getFloat("balance");
+                            DecimalFormat df = new DecimalFormat("#.##");
+                            String balance_format = df.format(balance);
+                            int acc_id = resultSet2.getInt("acc_id");
+                            System.out.println("Market Account ID: " + acc_id);
+                            System.out.println("Balance: $" + balance_format);
+                        } else {
+                            System.out.println("This person has not yet created a Market Account.");
+                        }
+                    }
                     System.out.println("=======================================================================================================================");
                     System.out.println("Here are the stocks that they own!");
-                    while(resultSet3.next()) {
-                        String symbol = resultSet3.getString("symbol").trim();
-                        int num_share = resultSet3.getInt("num_share");
-                        System.out.println("Symbol: " + symbol + ", Number of Shares: " + num_share);
+                    try(Statement statement3 = connection.createStatement()) {
+                        ResultSet resultSet3 = statement3.executeQuery(selectQuery3);
+                        while(resultSet3.next()) {
+                            String symbol = resultSet3.getString("symbol").trim();
+                            int num_share = resultSet3.getInt("num_share");
+                            System.out.println("Symbol: " + symbol + ", Number of Shares: " + num_share);
+                        }
                     }
                 } catch (SQLException e) {e.printStackTrace();}
                 break;
@@ -277,8 +296,8 @@ public class ManagerInterface {
         while(true) {
             if(scanner.hasNextFloat()) {
                 float temp = scanner.nextFloat();
-                if(temp < 0) {
-                    System.out.println("Please enter a valid decimal > 0 or type 'q' to return to Manager Interface.");
+                if(temp <= 0) {
+                    System.out.print("Please enter a valid decimal > 0 or type 'q' to return to Manager Interface:");
                 } else {
                     String updateQuery = "UPDATE Manager SET monthlyInterest = ?";
                     try (PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
@@ -293,7 +312,7 @@ public class ManagerInterface {
                 if("q".equalsIgnoreCase(input)) {
                     break;
                 } else {
-                    System.out.println("Please enter a valid decimal > 0 or type 'q' to return to Manager Interface.");
+                    System.out.print("Please enter a valid decimal > 0 or type 'q' to return to Manager Interface:");
                 }
             }
         }
@@ -310,7 +329,7 @@ public class ManagerInterface {
             String selectQuery = "SELECT A.acc_id, T.date_executed, " + curr_type.charAt(0) +  ".* " + 
                                     "FROM Account_has A, Commits O, Transactions T, " + curr_type + " " + curr_type.charAt(0) + 
                                     " WHERE A.username = O.username AND A.acc_id = O.acc_id AND O.tid = T.tid AND " + curr_type.charAt(0) + ".tid = T.tid" +
-                                    " AND A.username = " + username + " AND EXTRACT(MONTH FROM T.date_executed) = EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))";
+                                    " AND A.username = '" + username + "' AND EXTRACT(MONTH FROM T.date_executed) = EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))";
             try(Statement statement = connection.createStatement()) {
                 ResultSet resultSet = statement.executeQuery(selectQuery);
                 while(resultSet.next()) {
@@ -386,8 +405,8 @@ public class ManagerInterface {
         DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate curr_date2 = LocalDate.parse(curr_date, formatter2);
         Month month1 = curr_date2.getMonth();
-        String selectQuery = "SELECT T.* FROM Market_Account M, Temp_money T WHERE username = " + username + 
-                            " AND M.acc_id = T.acc_id ORDER BY T.balance_date DESC";
+        String selectQuery = "SELECT T.* FROM Market_Account M, Temp_money T WHERE username = '" + username + 
+                            "' AND M.acc_id = T.acc_id ORDER BY T.balance_date DESC";
         String final_balance = "0";
         String initial_balance = "0";
         float temp_balance = 0;
@@ -425,7 +444,7 @@ public class ManagerInterface {
         return temp_balance;
     }
     public static boolean checkIfMarketAccountExists(OracleConnection connection, String username) {
-        String selectQuery = "SELECT * FROM Market_Account WHERE username = " + username;
+        String selectQuery = "SELECT * FROM Market_Account WHERE username = '" + username + "'";
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if(resultSet.next()) {
@@ -433,6 +452,16 @@ public class ManagerInterface {
             }
         } catch (SQLException e) {e.printStackTrace();}
         return true;
+    }
+    public static boolean doesCustomerExist(OracleConnection connection, String username) {
+        String selectQuery = "SELECT * FROM Customer WHERE username = '" + username + "'";
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()) {
+                return true;
+            }
+        } catch (SQLException e) {e.printStackTrace();}
+        return false;
     }
 
 }
