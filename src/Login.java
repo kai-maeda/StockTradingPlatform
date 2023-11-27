@@ -71,7 +71,7 @@ public class Login {
                     if (resultSet.next()) {
                         System.out.println("Authentication successful!");
                         System.out.println("Welcome, " + resultSet.getString("cname") + "!");
-                        TraderInterface.main2(connection, resultSet.getInt("tax_id"));
+                        TraderInterface.main2(connection, resultSet.getString("username"));
                     } else {
                         System.out.println("Authentication failed. Please check your username and password.");
                     }
