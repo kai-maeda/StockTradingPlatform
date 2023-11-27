@@ -81,7 +81,7 @@ public class Demo {
                     promptChangeStockPrice(connection, scanner);
                     break;
                 case 5: 
-                    //promptDateChange(connection, scanner);
+                    promptDateChange(connection, scanner);
                 case 0: 
                     System.out.println("Exiting Demo Interface");
                     StartupOptions.main2(connection);
@@ -280,23 +280,53 @@ public class Demo {
         }
     }
 
-    /* 
-    public void promptDateChange(OracleConnection connection, Scanner scanner){
-        System.out.println("Enter the date you want to change to (YYYY-MM-DD): ");
-        String date = scanner.nextLine();
-        int year = date.substring(0, 4);
-        int month = date.substring(5, 7);
-        int day = date.substring(8, 9);
-        if(day > 31 || day == 0){
-            System.out.println("Invalid Date: Date does not exist");
-            return;
+    
+    public static void promptDateChange(OracleConnection connection, Scanner scanner){
+        System.out.println("Enter the year of the date you want to change to: ");
+        int year = 0;
+        while(true) {
+            if(scanner.hasNextInt()) {
+                year = scanner.nextInt();
+                if(year < 0){
+                    System.out.println("Invalid Date: Date does not exist");
+                    return;
+                }
+                break;
+            } else {
+                System.out.println("Invalid input. Please enter a number greater than zero.");
+                scanner.nextLine();
+            } 
         }
-
-        
-        if(month == 1 || month == month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12){
-
+        System.out.println("Enter the month of the date you want to change to: ");
+        int month = 0;
+        while(true) {
+            if(scanner.hasNextInt()) {
+                month = scanner.nextInt();
+                if(month < 1 || month > 12){
+                    System.out.println("Invalid Date: Date does not exist");
+                    return;
+                }
+                break;
+            } else {
+                System.out.println("Invalid input. Please enter a number greater than zero.");
+                scanner.nextLine();
+            } 
         }
-        
+        System.out.println("Enter the day of the date you want to change to: ");
+        int day = 0; 
+        while(true) {
+            if(scanner.hasNextInt()) {
+                day = scanner.nextInt();
+                if(day < 1 || day > 31){
+                    System.out.println("Invalid Date: Date does not exist");
+                    return;
+                }
+                break;
+            } else {
+                System.out.println("Invalid input. Please enter a number greater than zero.");
+                scanner.nextLine();
+            } 
+        } 
         if(month == 4 || month == 6 || month == 9 || month == 11){
             if(day == 31){
                 System.out.println("Invalid Date: Date does not exist");
@@ -304,20 +334,32 @@ public class Demo {
             }
         }
         if(month == 2){
-            if(date > 29){
+            if(day > 29){
                 System.out.println("Invalid Date: Date does not exist");
                 return;
             }
             //not a leap year
-            if(year % 4 != 0 && year & 1000 != 0){
-                if(date > 28){
+            if(year % 4 != 0 && year % 1000 != 0){
+                if(day > 28){
                     System.out.println("Invalid Date: Date does not exist");
                     return;
                 }
             }
         }
+        String updateQuery = "UPDATE Current_Time SET curr_date = TO_DATE(" + "'" + year + "-" + month + "-" + day + "', 'YYYY-MM-DD')";
+        try(Statement statement = connection.createStatement()){
+            int rowsAffected = statement.executeUpdate(updateQuery);
+            if (rowsAffected > 0) {
+                System.out.println("Date updated successfully!");
+            } else {
+                System.out.println("Date update failed.");
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
     }
-    */
+    
     
 
 }

@@ -703,6 +703,7 @@ public class TraderInterface {
     }
 
     depositSQL(total, connection, acc_id);
+    withdrawSQL(20, connection, acc_id);
 
     for(int i = 0; i < sellNumSharesArray.size(); i++){
         int numSharesToSell = sellNumSharesArray.get(i);
@@ -857,6 +858,7 @@ public class TraderInterface {
                     e.printStackTrace();
                 }
                 depositSQL(shares * buy_price, connection, acc_id);
+                withdrawSQL(20, connection, acc_id);
                 return;
             }
         }
