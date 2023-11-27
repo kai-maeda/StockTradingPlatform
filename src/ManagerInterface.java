@@ -20,9 +20,8 @@ import java.sql.Date;
 
 
 public class ManagerInterface {
-    public static void parentFunction(OracleConnection connection, int tax_id) {
+    public static void parentFunction(OracleConnection connection, int username) {
         Scanner scanner = new Scanner(System.in);
-        int accountId = TraderInterface.getAccountId(tax_id, connection);
 
         while (true) {
             System.out.println("=======================================================================================================================");
@@ -43,7 +42,7 @@ public class ManagerInterface {
             System.out.println("=======================================================================================================================");
             switch (choice) {
                 case 1:
-                    addInterest(connection,tax_id);
+                    addInterest(connection,username);
                     break;
                 case 2:
                     generateMonthlyStatement(connection, scanner);
@@ -72,7 +71,7 @@ public class ManagerInterface {
             }
         }
     }
-    public static void addInterest(OracleConnection connection, int tax_id) {
+    public static void addInterest(OracleConnection connection, int username) {
         //need list of temp_money and initial balance and length of month
         String curr_date = Demo.getDate(connection,1);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -82,7 +81,7 @@ public class ManagerInterface {
         if(curr_date2.getDayOfMonth() == last_day) {
             String selectQuery1 = ("SELECT monthlyInterest " + 
                                     "FROM Manager " +  
-                                    "WHERE tax_id = " + tax_id);
+                                    "WHERE username = " + username);
             String selectQuery2 = "SELECT * " +
                                     "FROM Market_Account";
             String insertQuery1 = "INSERT INTO Interests (tid, monthly_interest) " +
@@ -96,11 +95,11 @@ public class ManagerInterface {
                 while(resultSet3.next()) {
                     float avg_balance = 0;
                     int acc_id = resultSet3.getInt("acc_id");
-                    int acc_tax_id = resultSet3.getInt("tax_id");
-                    int tid = TraderInterface.createTransaction(connection, acc_tax_id,1);
+                    int acc_username = resultSet3.getInt("username");
+                    int tid = TraderInterface.createTransaction(connection, acc_username,1);
                     String selectQuery4 = "SELECT T.* FROM Market_Account M, Temp_money T WHERE M.acc_id = T.acc_id AND M.acc_id = " + acc_id + 
                                             " AND EXTRACT(MONTH FROM T.balance_date) = EXTRACT(MONTH FROM TO_DATE('" + curr_date2 + "', 'yyyy-mm-dd')) ORDER BY T.balance_date DESC";
-                    float initial_balance = getInitialAndFinalBalance(connection,acc_tax_id,1);
+                    float initial_balance = getInitialAndFinalBalance(connection,acc_username,1);
                     try(Statement statement2 = connection.createStatement()) {
                         ResultSet resultSet4 = statement2.executeQuery(selectQuery4);
                         int prev_day = last_day;
@@ -159,18 +158,18 @@ public class ManagerInterface {
     public static void listActiveCustomers(OracleConnection connection) {
         String curr_date = Demo.getDate(connection,1);
         String selectQuery = ("SELECT C.* " + 
-                                "FROM Customer C, (SELECT T.tax_id, SUM(T.sumShares) AS totalShares " + 
-                                    "FROM (SELECT C.tax_id, SUM(B.shares) AS sumShares " +
+                                "FROM Customer C, (SELECT T.username, SUM(T.sumShares) AS totalShares " + 
+                                    "FROM (SELECT C.username, SUM(B.shares) AS sumShares " +
                                         "FROM Buy B, Transactions T, Commits C " +
                                         "WHERE B.tid = T.tid AND C.tid = T.tid AND EXTRACT(MONTH FROM T.date_executed) = " + "EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))" +
-                                        "GROUP BY C.tax_id " +
+                                        "GROUP BY C.username " +
                                         "UNION " +
-                                        "SELECT C.tax_id, SUM(S.shares) AS sumShares " +
+                                        "SELECT C.username, SUM(S.shares) AS sumShares " +
                                         "FROM Sell S, Transactions T, Commits C " +
                                         "WHERE S.tid = T.tid AND C.tid = T.tid AND EXTRACT(MONTH FROM T.date_executed) = " +  "EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))" +
-                                        "GROUP BY C.tax_id) T " + 
-                                    "GROUP BY T.tax_id) T2 " + 
-                                "WHERE C.tax_id = T2.tax_id AND T2.totalShares >= 1000");
+                                        "GROUP BY C.username) T " + 
+                                    "GROUP BY T.username) T2 " + 
+                                "WHERE C.username = T2.username AND T2.totalShares >= 1000");
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             System.out.println("Here is a list of all customers who have bought or sold at least 1000 shares this month...");
@@ -193,8 +192,8 @@ public class ManagerInterface {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             System.out.println("Generating list of customers who have made more than $10,000 in the past month...");
             while(resultSet.next()) {
-                int tax_id = resultSet.getInt("tax_id");
-                float total_earnings = generateListOfTransaction(connection, 1, tax_id);
+                int username = resultSet.getInt("username");
+                float total_earnings = generateListOfTransaction(connection, 1, username);
                 if(total_earnings >= 10000) {
                     String state_id = resultSet.getString("state_id").trim();
                     String cname = resultSet.getString("cname").trim();
@@ -215,11 +214,11 @@ public class ManagerInterface {
         System.out.print("Please enter the tax ID associated with the customer that you would like to receive a customer report for: ");
         while(true) {
             if(scanner.hasNextInt()) {
-                int correct_id = scanner.nextInt();
+                String correct_id = scanner.nextInt();
                 System.out.println("=======================================================================================================================");
-                String selectQuery1 = "SELECT * FROM Customer WHERE tax_id = " + correct_id;
-                String selectQuery2 = "SELECT * FROM Market_Account WHERE tax_id = " + correct_id;
-                String selectQuery3 = "SELECT * FROM Stock_Account WHERE tax_id = " + correct_id;
+                String selectQuery1 = "SELECT * FROM Customer WHERE username = " + correct_id;
+                String selectQuery2 = "SELECT * FROM Market_Account WHERE username = " + correct_id;
+                String selectQuery3 = "SELECT * FROM Stock_Account WHERE username = " + correct_id;
                 try(Statement statement = connection.createStatement()) {
                     ResultSet resultSet1 = statement.executeQuery(selectQuery1);
                     resultSet1.next();
@@ -299,7 +298,7 @@ public class ManagerInterface {
             }
         }
     }    
-    public static float generateListOfTransaction(OracleConnection connection, int flag, int tax_id) {
+    public static float generateListOfTransaction(OracleConnection connection, int flag, int username) {
         String curr_date = Demo.getDate(connection,1);
         String[] types_trans = {"Buy", "Sell", "Withdraw", "Deposit", "Cancels", "Interests"};
         float total_earnings = 0;
@@ -310,8 +309,8 @@ public class ManagerInterface {
             String curr_type = types_trans[i];
             String selectQuery = "SELECT A.acc_id, T.date_executed, " + curr_type.charAt(0) +  ".* " + 
                                     "FROM Account_has A, Commits O, Transactions T, " + curr_type + " " + curr_type.charAt(0) + 
-                                    " WHERE A.tax_id = O.tax_id AND A.acc_id = O.acc_id AND O.tid = T.tid AND " + curr_type.charAt(0) + ".tid = T.tid" +
-                                    " AND A.tax_id = " + tax_id + " AND EXTRACT(MONTH FROM T.date_executed) = EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))";
+                                    " WHERE A.username = O.username AND A.acc_id = O.acc_id AND O.tid = T.tid AND " + curr_type.charAt(0) + ".tid = T.tid" +
+                                    " AND A.username = " + username + " AND EXTRACT(MONTH FROM T.date_executed) = EXTRACT(MONTH FROM TO_DATE('" + curr_date + "', 'yyyy-mm-dd'))";
             try(Statement statement = connection.createStatement()) {
                 ResultSet resultSet = statement.executeQuery(selectQuery);
                 while(resultSet.next()) {
@@ -352,7 +351,7 @@ public class ManagerInterface {
             } catch (SQLException e) {e.printStackTrace();}
         }    
         if(flag == 0) System.out.println("=======================================================================================================================");
-        getInitialAndFinalBalance(connection, tax_id, flag);
+        getInitialAndFinalBalance(connection, username, flag);
         String total_format = df.format(total_earnings);
         String commisions_format = df.format(commissions);
         if(total_earnings >= 0) {
@@ -380,14 +379,14 @@ public class ManagerInterface {
         } catch (SQLException e) {e.printStackTrace();}
         return money_earned;
     }
-    public static float getInitialAndFinalBalance(OracleConnection connection, int tax_id, int flag) {
+    public static float getInitialAndFinalBalance(OracleConnection connection, int username, int flag) {
         String curr_date = Demo.getDate(connection,1);
         DecimalFormat df = new DecimalFormat("#.##");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
         DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate curr_date2 = LocalDate.parse(curr_date, formatter2);
         Month month1 = curr_date2.getMonth();
-        String selectQuery = "SELECT T.* FROM Market_Account M, Temp_money T WHERE tax_id = " + tax_id + 
+        String selectQuery = "SELECT T.* FROM Market_Account M, Temp_money T WHERE username = " + username + 
                             " AND M.acc_id = T.acc_id ORDER BY T.balance_date DESC";
         String final_balance = "0";
         String initial_balance = "0";
@@ -425,8 +424,8 @@ public class ManagerInterface {
         } catch (SQLException e) {e.printStackTrace();}
         return temp_balance;
     }
-    public static boolean checkIfMarketAccountExists(OracleConnection connection, int tax_id) {
-        String selectQuery = "SELECT * FROM Market_Account WHERE tax_id = " + tax_id;
+    public static boolean checkIfMarketAccountExists(OracleConnection connection, int username) {
+        String selectQuery = "SELECT * FROM Market_Account WHERE username = " + username;
         try(Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if(resultSet.next()) {
