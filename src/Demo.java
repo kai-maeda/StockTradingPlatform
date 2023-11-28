@@ -195,9 +195,10 @@ public class Demo {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        setClosingPrices(connection);
     }
 
-    public static void setClosingPrices(){
+    public static void setClosingPrices(OracleConnection connection){
         String selectAllStocks = "SELECT * FROM Stock_Actor";
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectAllStocks);
