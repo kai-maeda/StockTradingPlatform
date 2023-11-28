@@ -18,8 +18,8 @@ import java.sql.DatabaseMetaData;
 
 public class MainApplication {
 
-    final static String DB_URL = "jdbc:oracle:thin:@kaidb_tp?TNS_ADMIN=/Users/kaimaeda/Wallet_KaiDB";
-        //   final static String DB_URL = "jdbc:oracle:thin:@kaidb_tp?TNS_ADMIN=/Users/edwardlavelle/Desktop/Wallet_KaiDB";
+    //final static String DB_URL = "jdbc:oracle:thin:@kaidb_tp?TNS_ADMIN=/Users/kaimaeda/Wallet_KaiDB";
+           final static String DB_URL = "jdbc:oracle:thin:@kaidb_tp?TNS_ADMIN=/Users/edwardlavelle/Desktop/Wallet_KaiDB";
     final static String DB_USER = "ADMIN";
     final static String DB_PASSWORD = "KaiOracle123";
     
