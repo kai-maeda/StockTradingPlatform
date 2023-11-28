@@ -576,7 +576,7 @@ public class TraderInterface {
 
     private static void printAllShares(String symbol, OracleConnection connection, String username){
         System.out.println("All Owned Shares of " + symbol + ":");
-        String selectQuery = "SELECT * FROM Bought_Stock WHERE symbol = " + "'" + symbol + "'" + " AND username = " + username;
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE symbol = " + "'" + symbol + "'" + " AND username = " + "'" + username + "'";
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectQuery);
             while(resultSet.next()){
@@ -662,7 +662,7 @@ public class TraderInterface {
     for(int i = 0; i < sellNumSharesArray.size(); i++){
         int numSharesToSell = sellNumSharesArray.get(i);
         double sell_at_buy_price = sellAtBuyPriceArray.get(i);
-        String selectQuery = "SELECT * FROM Bought_Stock WHERE username = " + username + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE username = " + "'" + username + "'" +  " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if(resultSet.next()){
@@ -705,7 +705,7 @@ public class TraderInterface {
             if(resultSet.next()){
                 int shares_bought = resultSet.getInt("shares_bought");
                 if(shares_bought == numSharesToSell){
-                    String deleteQuery = "DELETE FROM Bought_Stock WHERE username = " + username + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+                    String deleteQuery = "DELETE FROM Bought_Stock WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
                     try(Statement statement2 = connection.createStatement()){
                         int rowsAffected = statement2.executeUpdate(deleteQuery);
                         if(rowsAffected > 0){
@@ -720,7 +720,7 @@ public class TraderInterface {
                     }
                 }
                 else{
-                    String updateQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(numSharesToSell) + " WHERE username = " + username + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
+                    String updateQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(numSharesToSell) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
                     try(Statement statement2 = connection.createStatement()){
                         int rowsAffected = statement2.executeUpdate(updateQuery);
                         if(rowsAffected > 0){
@@ -808,7 +808,7 @@ public class TraderInterface {
             System.out.println("ERROR: Sell_leg creation failed.");
             e.printStackTrace();
         }
-        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(total) + " WHERE username = " + username + " AND symbol = " + "'" + symbol + "'";
+        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(total) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateQuery);
                         if (rowsAffected > 0) {
@@ -856,7 +856,7 @@ public class TraderInterface {
             return;
         }
         int last_tid = -1;
-        String selectQuery = "SELECT * FROM Customer WHERE username = " + username;
+        String selectQuery = "SELECT * FROM Customer WHERE username = " + "'" + username + "'";
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if(resultSet.next()){
@@ -898,7 +898,7 @@ public class TraderInterface {
                 System.out.println("Would you like to cancel this transaction? Type Y to cancel, type anything else to exit.");
                 String answer = scanner.nextLine();
                 if(answer.equalsIgnoreCase("Y")){
-                    String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(shares) + ", balance_share = balance_share - " + Double.toString(shares * buy_price) + " WHERE username = " + username + " AND symbol = " + "'" + symbol + "'";
+                    String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(shares) + ", balance_share = balance_share - " + Double.toString(shares * buy_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateStockAccount);
                         if (rowsAffected > 0) {
@@ -911,7 +911,7 @@ public class TraderInterface {
                         e.printStackTrace();
                     }
 
-                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(shares) + " WHERE username = " + username + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(buy_price);
+                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(shares) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(buy_price);
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateBought_Stock);
                         if (rowsAffected > 0) {
@@ -959,7 +959,7 @@ public class TraderInterface {
                 System.out.println("Would you like to cancel this transaction? Type Y to cancel, type anything else to exit.");
                 String answer = scanner.nextLine();
                 if(answer.equalsIgnoreCase("Y")){
-                    String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(shares) + ", balance_share = balance_share + " + Double.toString(shares * sell_price) + " WHERE username = " + username + " AND symbol = " + "'" + symbol + "'";
+                    String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(shares) + ", balance_share = balance_share + " + Double.toString(shares * sell_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateStockAccount);
                         if (rowsAffected > 0) {
@@ -972,7 +972,7 @@ public class TraderInterface {
                         e.printStackTrace();
                     }
 
-                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(shares) + " WHERE username = " + username + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_price);
+                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(shares) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_price);
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateBought_Stock);
                         if (rowsAffected > 0) {
@@ -1214,6 +1214,26 @@ public class TraderInterface {
                     System.out.println("Number of Shares: " + resultSet.getString("shares"));
                     System.out.println("Sell Price: " + resultSet.getString("sell_price"));
                     System.out.println("Symbol: " + resultSet.getString("symbol"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            selectQuery = "SELECT * FROM Cancels WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction Type: Cancel");
+                    System.out.println("Previous Transaction Cancelled");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            selectQuery = "SELECT * FROM Interests WHERE tid = " + Integer.toString(transaction_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    System.out.println("Transaction Type: Accrue Interest");
+                    System.out.println("Interest Rate: " + resultSet.getString("monthly_interest"));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
