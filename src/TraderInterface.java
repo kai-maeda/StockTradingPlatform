@@ -1296,12 +1296,30 @@ public class TraderInterface {
             if(resultSet.next()) {
                 System.out.println("Movie Title: " + resultSet.getString("title"));
                 System.out.println("Year: " + resultSet.getString("movie_year"));
-                System.out.println("Rating: " + resultSet.getString("rating"));
             }
             else{
                 System.out.println("Movie does not exist.");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        String getAverageReviewsQuery = "SELECT * FROM Review WHERE title = " + "'" + movieName + "'" + " AND movie_year = " + Integer.toString(year);
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(getAverageReviewsQuery);
+            int count = 0;
+            int sum = 0;
+            while(resultSet.next()){
+                count++;
+                sum += resultSet.getInt("rating");
+            }
+            if(count == 0){
+                System.out.println("No reviews for this movie, cannot determine average rating.");
+            }
+            else{
+                System.out.println("Average Rating: " + (double)sum / count);
+            }
+        }
+        catch(SQLException e){
             e.printStackTrace();
         }
 
@@ -1360,7 +1378,7 @@ public class TraderInterface {
                 System.out.println("Please enter a valid integer. Try again.");
             }
         }
-        String selectQuery = "SELECT * FROM Review WHERE title = " + "'" + movieName + "'" + " AND year_written = " + Integer.toString(year);
+        String selectQuery = "SELECT * FROM Review WHERE title = " + "'" + movieName + "'" + " AND movie_year = " + Integer.toString(year);
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             int count = 1;
@@ -1368,6 +1386,7 @@ public class TraderInterface {
             while(resultSet.next()) {
                 found = true;
                 System.out.println("Review " + count + ": " + resultSet.getString("written_review"));
+                System.out.println("Rating: " + resultSet.getInt("rating"));
                 count++;
             }
             if (found == false) {

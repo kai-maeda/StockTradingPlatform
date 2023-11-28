@@ -29,25 +29,13 @@ public class Login {
             System.out.println("3. Exit");
             
             int choice = -1;
-            scanner.nextLine(); // Consume the newline
-
-            while (true) {
-                System.out.print("Enter a number between 1 and 3: ");
-                
-                if (scanner.hasNextInt()) {
-                    choice = scanner.nextInt();
-                    scanner.nextLine(); // Consume the newline
-                    
-                    if (choice >= 1 && choice <= 3) {
-                        // Valid input, break out of the loop
-                        break;
-                    } else {
-                        System.out.println("Error: Input must be between 1 and 3. Try again.");
-                    }
-                } else {
-                    scanner.nextLine(); // Consume the invalid input
-                    System.out.println("Error: Invalid input. Please enter a valid number.");
-                }
+            //scanner.nextLine(); // Consume the newline
+            if (scanner.hasNextInt()) {
+                choice = scanner.nextInt();
+                scanner.nextLine(); // Consume the newline
+            } else {
+                scanner.nextLine(); // Consume the invalid input
+                System.out.println("Error: Invalid input. Please enter a valid number.");
             }
     
             

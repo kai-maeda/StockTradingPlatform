@@ -197,6 +197,33 @@ public class Demo {
         }
     }
 
+    public static void setClosingPrices(){
+        String selectAllStocks = "SELECT * FROM Stock_Actor";
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectAllStocks);
+            while(resultSet.next()){
+                String symbol = resultSet.getString("symbol");
+                double current_price = resultSet.getDouble("current_price");
+                double closing_price = resultSet.getDouble("closing_price");
+                String updateQuery = "UPDATE Stock_Actor SET closing_price = " + Double.toString(current_price) + " WHERE symbol = '" + symbol + "'";
+                try(Statement statement2 = connection.createStatement()){
+                    int rowsAffected = statement2.executeUpdate(updateQuery);
+                    if (rowsAffected > 0) {
+                        System.out.println("Closing Price updated successfully!");
+                    } else {
+                        System.out.println("Closing Price update failed.");
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
+
     public static void goToNextDay(OracleConnection connection) {
         String selectQuery = "SELECT * FROM Current_Time";
         String curr_date = "";
