@@ -237,11 +237,15 @@ public class TraderInterface {
             System.out.println("Please enter the amount you would like to deposit as a decimal number: ");
             if (scanner.hasNextDouble()) {
                 double amount = scanner.nextDouble();
-                // Process the valid double input (amount) here
-                System.out.println("You entered: " + amount);
-                depositSQL(amount, connection, accountId, username);
-                createDepositTransaction(connection, amount, username);
-                break; // Exit the loop since valid input was provided
+                if (amount <= 0) {
+                    System.out.println("Invalid input. Please enter a positive non-zero amount.");
+                } else {
+                    // Process the valid double input (amount) here
+                    System.out.println("You entered: " + amount);
+                    depositSQL(amount, connection, accountId, username);
+                    createDepositTransaction(connection, amount, username);
+                    break; // Exit the loop since valid input was provided
+                }
             } else {
                 System.out.println("Invalid input. Please enter a valid decimal number.");
                 scanner.next(); // Consume the invalid input to avoid an infinite loop
