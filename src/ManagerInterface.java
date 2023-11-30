@@ -73,6 +73,8 @@ public class ManagerInterface {
     }
     public static void addInterest(OracleConnection connection, int username) {
         //need list of temp_money and initial balance and length of month
+
+        Date clean_date = Demo.getDateSQLFriendly(connection);
         String curr_date = Demo.getDate(connection,1);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate curr_date2 = LocalDate.parse(curr_date, formatter); 
@@ -104,25 +106,26 @@ public class ManagerInterface {
                         int tid = TraderInterface.createTransaction(connection, acc_username,1);
                         String selectQuery4 = "SELECT T.* FROM Market_Account M, Temp_money T WHERE M.acc_id = T.acc_id AND M.acc_id = " + acc_id + 
                                                 " AND EXTRACT(MONTH FROM T.balance_date) = EXTRACT(MONTH FROM TO_DATE('" + curr_date2 + "', 'yyyy-mm-dd')) ORDER BY T.balance_date DESC";
-                        float initial_balance = getInitialAndFinalBalance(connection,acc_username,1);
+                        float[] balance_results = getInitialAndFinalBalance(connection,acc_username,1);
                         try(Statement statement2 = connection.createStatement()) {
                             ResultSet resultSet4 = statement2.executeQuery(selectQuery4);
                             int prev_day = last_day;
                             while(resultSet4.next()) {
                                 java.sql.Date balance_date = resultSet4.getDate("balance_date");
                                 LocalDate fixed_balance_date = balance_date.toLocalDate();
-                                float temp_balance = resultSet4.getFloat("temp_balance");
+                                float temp_balance2 = resultSet4.getFloat("temp_balance");
                                 Month temp_month  = fixed_balance_date.getMonth();
                                 int temp_day = fixed_balance_date.getDayOfMonth();
-                                avg_balance += (prev_day-temp_day+1)* temp_balance;
+                                avg_balance += (prev_day-temp_day+1)* temp_balance2;
                             }
                             resultSet4.close();
-                            avg_balance += (prev_day) * initial_balance;
+                            avg_balance += (prev_day) * balance_results[0];
                         } 
                         avg_balance /= last_day;
+
                         String updateQuery1 = ("UPDATE Market_Account " + 
-                                            "SET balance = " + avg_balance + " + " + avg_balance + " * " + monthlyInterest +
-                                            " WHERE acc_id = " + acc_id);
+                                               "SET balance = balance + " + avg_balance + " * " + monthlyInterest +
+                                              " WHERE acc_id = " + acc_id);
                         try(Statement statement3 = connection.createStatement()) {
                             statement3.executeUpdate(updateQuery1);
                         }
@@ -130,6 +133,27 @@ public class ManagerInterface {
                             preparedStatement.setInt(1, tid);
                             preparedStatement.setFloat(2,avg_balance * monthlyInterest);
                             preparedStatement.executeUpdate();
+                        }
+                        int bid = 0;
+                        while(true){
+                            Random random = new Random();
+                            bid = random.nextInt(Integer.MAX_VALUE);
+                            String selectQuery6 = "SELECT * FROM Temp_Money WHERE bid = " + Integer.toString(bid);
+                            try (Statement statement7 = connection.createStatement()) {
+                                ResultSet resultSet = statement7.executeQuery(selectQuery6);
+                                if (resultSet.next()) continue;
+                                break;
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        String insertQuery = "INSERT INTO Temp_Money (temp_balance, balance_date,acc_id, bid) VALUES (?,?,?,?)";
+                        try(PreparedStatement preparedStatement4 = connection.prepareStatement(insertQuery)){
+                            preparedStatement4.setFloat(1, balance_results[1] + avg_balance * monthlyInterest);
+                            preparedStatement4.setDate(2,clean_date);
+                            preparedStatement4.setInt(3,acc_id);
+                            preparedStatement4.setInt(4,bid);
+                            preparedStatement4.executeUpdate();
                         }
                     }
                     resultSet3.close();
@@ -398,7 +422,7 @@ public class ManagerInterface {
         } catch (SQLException e) {e.printStackTrace();}
         return money_earned;
     }
-    public static float getInitialAndFinalBalance(OracleConnection connection, String username, int flag) {
+    public static float[] getInitialAndFinalBalance(OracleConnection connection, String username, int flag) {
         String curr_date = Demo.getDate(connection,1);
         DecimalFormat df = new DecimalFormat("#.##");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
@@ -421,7 +445,7 @@ public class ManagerInterface {
                 if(month1 != month2) {
                     initial_balance = df.format(temp_balance);
                     if(flag == 0) System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
-                    return temp_balance;
+                    return new float[]{temp_balance, Float.parseFloat(final_balance)};
                 }
             }
             while(resultSet.next()) {
@@ -432,7 +456,7 @@ public class ManagerInterface {
                     temp_balance = resultSet.getFloat("temp_balance");
                     initial_balance = df.format(temp_balance);
                     if(flag == 0) System.out.println("Inital account balance = $" + initial_balance + ", Final account balance = $" + final_balance);
-                    return temp_balance;
+                    return new float[]{temp_balance, Float.parseFloat(final_balance)};
                 }
             }
             if(resultSet.previous()) {
@@ -441,7 +465,7 @@ public class ManagerInterface {
                 if(flag == 0) System.out.println("Inital account balance = $" + initial_balance + " Final account balance = $" + final_balance);
             }
         } catch (SQLException e) {e.printStackTrace();}
-        return temp_balance;
+        return new float[]{temp_balance, Float.parseFloat(final_balance)};
     }
     public static boolean checkIfMarketAccountExists(OracleConnection connection, String username) {
         String selectQuery = "SELECT * FROM Market_Account WHERE username = '" + username + "'";
