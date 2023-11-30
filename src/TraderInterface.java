@@ -1150,6 +1150,8 @@ public class TraderInterface {
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setInt(1, transaction_id);
             preparedStatement.setDate(2, date);
+            Date myDate = new Date(System.currentTimeMillis());
+            preparedStatement.setDate(3, myDate);
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
@@ -1556,6 +1558,8 @@ public class TraderInterface {
             preparedStatement.setDouble(2, temp_balance);
             preparedStatement.setDate(3, balance_date);
             preparedStatement.setInt(4, acc_id);
+            Date myDate = new Date(System.currentTimeMillis());
+            preparedStatement.setDate(5, myDate);
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
