@@ -22,6 +22,7 @@ import java.sql.Date;
 
 public class DataInput {
 
+
     public static void main3(OracleConnection connection) {
 
         // Scanner scanner = new Scanner(System.in);
@@ -83,10 +84,6 @@ public class DataInput {
                             indices = new int[]{0,1};
                             correctParameters = reorder(parameters, indices);
                             correctValues = reorder(values, indices);
-                            // else {
-                            // //     correctParameters = parameters;
-                            // //     correctValues = reorder(values, indices);
-                            // // }
                         } else if(i == 3){
                             if(j == 0) {
                                 indices = new int[]{0,1};
@@ -121,6 +118,10 @@ public class DataInput {
                                         System.out.println("Insertion failed.");
                                     }
                                 }
+                                if(tableName[j] == "Market_Account") {
+                                    int acc_id = Integer.parseInt(correctValues[1]);
+                                    fillTemp_Money(connection, acc_id);
+                                }
                             } 
                         } catch (SQLException e) {
                             System.out.println(selectQuery);
@@ -134,6 +135,7 @@ public class DataInput {
             System.err.println("File not found: " + filePath);
             e.printStackTrace();
         }
+
     }
   
     public static String buildInsertQuery(String tableName, String[] parameters, String[] values, String[] integers, String[] floats) {
@@ -212,6 +214,38 @@ public class DataInput {
         } catch (SQLException e) {e.printStackTrace();}
         System.out.println("Sorry, could not find a username associated with that tax ID.");
         return "-1";
+    }
+    public static void fillTemp_Money(OracleConnection connection, int acc_id) {
+        String selectQuery = "SELECT * FROM Market_Account, current_time WHERE acc_id = " + acc_id;
+        String insertQuery = "INSERT INTO Temp_Money (acc_id, temp_balance, balance_date, bid) VALUES (?, ?, ?, ?)";
+        int bid = 0;
+        while(true){
+            Random random = new Random();
+            bid = random.nextInt(Integer.MAX_VALUE);
+            String selectQuery2 = "SELECT * FROM Temp_Money WHERE bid = " + Integer.toString(bid);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery2);
+                if (resultSet.next()) continue;
+                break;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        try(Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            if(resultSet.next()) {
+                java.sql.Date curr_date = resultSet.getDate("curr_date");
+                float balance = resultSet.getFloat("balance");
+                try(PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)){
+                    preparedStatement.setInt(1, acc_id);
+                    preparedStatement.setFloat(2, balance);
+                    preparedStatement.setDate(3, curr_date);
+                    preparedStatement.setInt(4, bid);
+                    preparedStatement.executeUpdate();
+                }
+            }
+
+        } catch(SQLException e) {e.printStackTrace();}
     }
 }
 

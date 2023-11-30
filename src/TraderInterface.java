@@ -1114,7 +1114,7 @@ public class TraderInterface {
             if(flag == 0) System.out.println("Transaction Account creation failed.");
             e.printStackTrace();
         }
-        insertIntoCommits(connection, transaction_id, username, 0);
+        insertIntoCommits(connection, transaction_id, username, flag);
 
         String modifyCustomerTid = "UPDATE Customer SET last_tid = ? WHERE username = ?";
         try(PreparedStatement preparedStatement = connection.prepareStatement(modifyCustomerTid)){
@@ -1123,9 +1123,9 @@ public class TraderInterface {
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Modify Customer successful!");
+                if(flag == 0)System.out.println("Modify Customer successful!");
             } else {
-                System.out.println("Modify Customer failed.");
+                if(flag == 0)System.out.println("Modify Customer failed.");
             }
         }
         catch(SQLException e){
