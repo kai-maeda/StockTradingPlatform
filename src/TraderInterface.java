@@ -1143,7 +1143,7 @@ public class TraderInterface {
         }
         if (flag == 0)
             System.out.println("Generated Transaction Key: " + transaction_id);
-        String insertQuery = "INSERT INTO Transactions (tid, date_executed) VALUES (?, ?)";
+        String insertQuery = "INSERT INTO Transactions (tid, date_executed, time_order) VALUES (?, ?, ?)";
 
         Date date = Demo.getDateSQLFriendly(connection);
         // Date date = new Date(System.currentTimeMillis());
@@ -1216,7 +1216,6 @@ public class TraderInterface {
         System.out.println("Show Transaction History option selected.");
         ArrayList<Integer> transactions = new ArrayList<Integer>();
         transactions = getUserTransactions(connection, username);
-        String 
         for (int i = 0; i < transactions.size(); i++) {
             int transaction_id = transactions.get(i);
             String selectQuery = "SELECT * FROM Transactions WHERE tid = " + Integer.toString(transaction_id);
@@ -1550,7 +1549,7 @@ public class TraderInterface {
                 e.printStackTrace();
             }
         }
-        String insertQuery = "INSERT INTO Temp_Money (bid, temp_balance, balance_date, acc_id) VALUES (?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO Temp_Money (bid, temp_balance, balance_date, acc_id, time_order) VALUES (?, ?, ?, ?, ?)";
         int acc_id = getAccountId(username, connection);
         double temp_balance = getBalance(connection, acc_id);
         Date balance_date = Demo.getDateSQLFriendly(connection);
