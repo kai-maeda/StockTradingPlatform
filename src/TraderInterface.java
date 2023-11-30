@@ -45,6 +45,7 @@ public class TraderInterface {
 
                         int acc_id = createAccount_Has(username, connection);
                         createMarketAccount(amount, acc_id, username, connection);
+                        createDepositTransaction(connection, amount, username);
 
                         System.out.println("Successfully deposited $" + amount + ".");
                         // You can add code to perform the deposit operation
@@ -77,10 +78,11 @@ public class TraderInterface {
             System.out.println("9. Movie Information");
             System.out.println("10. List all Reviews for Movie");
             System.out.println("11. Top 10 Movies");
+            System.out.println("12. List Stock Account Information");
             System.out.println("0. Exit");
             System.out.println("=======================================================================================================================");
 
-            System.out.print("Enter your choice (0-11): ");
+            System.out.print("Enter your choice (0-12): ");
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consume the newline
             System.out.println("=======================================================================================================================");
@@ -137,13 +139,16 @@ public class TraderInterface {
                 case 11: 
                     topMovies(connection, scanner);
                     break;
+                case 12:
+                    listAllStockAccounts(connection, username);
+                    break;
                 case 0:
                     System.out.println("Exiting Trader Interface.");
                     //scanner.close();
                     StartupOptions.main2(connection);
                     //System.exit(0);
                 default:
-                    System.out.println("Invalid option. Please choose a valid option (0-10).");
+                    System.out.println("Invalid option. Please choose a valid option (0-12).");
             }
         }
     }
@@ -355,7 +360,7 @@ public class TraderInterface {
         double stockPrice = getStockPrice(connection, symbol);
         if(stockPrice != -1.0) {
             System.out.println("Stock exists.");
-            System.out.println("Type amount of stock you would like to purchase.");
+            //System.out.println("Type amount of stock you would like to purchase.");
             int numShares = 0;
             while (true) {
                 System.out.print("Type the amount of stock you wish to purchase: ");
@@ -389,7 +394,7 @@ public class TraderInterface {
                     e.printStackTrace();
                 }
                 //String updateQuery = "UPDATE Stock_Account SET num_share = num_share + ?, balance_share = balance_share + ? WHERE tax_id = ? AND symbol = ?";
-                String updateQuery = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(numShares) + ", balance_share = balance_share + " + Double.toString(totalCost) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
+                String updateQuery = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(numShares) + ", balance_share = balance_share + " + Double.toString(totalCost - 20) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                 try (Statement statement = connection.createStatement()) {
                     //preparedStatement.setInt(1, numShares);
                     //preparedStatement.setDouble(2, totalCost);
@@ -607,6 +612,7 @@ public class TraderInterface {
         }
         ArrayList<Integer> sellNumSharesArray = new ArrayList<>();
         ArrayList<Double> sellAtBuyPriceArray = new ArrayList<>();
+        int totalShares = 0;
         int numShares = 0;
         boolean execute = false;
         while(execute == false){
@@ -615,7 +621,7 @@ public class TraderInterface {
             try {
                 numShares = Integer.parseInt(scanner.nextLine());
                 if(numShares <= 0) {
-                    System.out.println("Invalid input. Number of shares must be an integer than zero.");
+                    System.out.println("Invalid input. Number of shares must be an integer greater than zero.");
                     return;
                 }
                 break;  // Exit the loop if the input is a valid integer
@@ -638,6 +644,7 @@ public class TraderInterface {
             }
         }
         sellNumSharesArray.add(numShares);
+        totalShares = totalShares + numShares;
         sellAtBuyPriceArray.add(sell_at_buy_price);
         while (true) {
             System.out.println("Do you want to sell additional shares? (Y/N)");
@@ -704,6 +711,7 @@ public class TraderInterface {
             ResultSet resultSet = statement.executeQuery(selectQuery);
             if(resultSet.next()){
                 int shares_bought = resultSet.getInt("shares_bought");
+                /* 
                 if(shares_bought == numSharesToSell){
                     String deleteQuery = "DELETE FROM Bought_Stock WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
                     try(Statement statement2 = connection.createStatement()){
@@ -719,7 +727,8 @@ public class TraderInterface {
                         e.printStackTrace();
                     }
                 }
-                else{
+                */
+                //else{
                     String updateQuery = "UPDATE Bought_Stock SET shares_bought = shares_bought - " + Integer.toString(numSharesToSell) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_at_buy_price);
                     try(Statement statement2 = connection.createStatement()){
                         int rowsAffected = statement2.executeUpdate(updateQuery);
@@ -733,7 +742,7 @@ public class TraderInterface {
                     catch(SQLException e){
                         e.printStackTrace();
                     }
-                }
+                //}
             }
             else{
                 System.out.println("You do not own any shares at this buy price: " + sell_at_buy_price);
@@ -755,7 +764,7 @@ public class TraderInterface {
         preparedStatement.setInt(1, transaction_id);
         preparedStatement.setString(2, symbol);
         preparedStatement.setDouble(3, stockPrice);
-        preparedStatement.setInt(4, numShares);
+        preparedStatement.setInt(4, totalShares);
 
         int rowsAffected = preparedStatement.executeUpdate();
         if (rowsAffected > 0) {
@@ -770,6 +779,8 @@ public class TraderInterface {
 
     depositSQL(total, connection, acc_id, username);
     withdrawSQL(20, connection, acc_id, username);
+
+    int sell_leg_group_id = generateRandomSellLegGroupBy(connection);
 
     for(int i = 0; i < sellNumSharesArray.size(); i++){
         int numSharesToSell = sellNumSharesArray.get(i);
@@ -791,12 +802,13 @@ public class TraderInterface {
                 e.printStackTrace();
             }
         }
-        String insertQuery = "INSERT INTO Sell_leg (bought_price, shares, tid, leg_id) VALUES (?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO Sell_leg (bought_price, shares, tid, leg_id, group_id) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setDouble(1, sell_at_buy_price);
             preparedStatement.setInt(2, numSharesToSell);
             preparedStatement.setInt(3, transaction_id);
             preparedStatement.setInt(4, leg_id);
+            preparedStatement.setInt(5, sell_leg_group_id);
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
@@ -808,7 +820,8 @@ public class TraderInterface {
             System.out.println("ERROR: Sell_leg creation failed.");
             e.printStackTrace();
         }
-        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(total) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
+        //String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(total) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
+        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(numSharesToSell * sell_at_buy_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateQuery);
                         if (rowsAffected > 0) {
@@ -847,6 +860,48 @@ public class TraderInterface {
             System.out.println("ERROR: Sell Transaction creation failed.");
             e.printStackTrace();
         }
+    }
+
+    public static int generateRandomSellGroupBy(OracleConnection connection){
+        int group_id = 0;
+        while(true){
+            Random random = new Random();
+            group_id = random.nextInt(Integer.MAX_VALUE);
+            String selectQuery = "SELECT * FROM Sell WHERE group_id = " + Integer.toString(group_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return group_id;
+    }
+
+    public static int generateRandomSellLegGroupBy(OracleConnection connection){
+        int group_id = 0;
+        while(true){
+            Random random = new Random();
+            group_id = random.nextInt(Integer.MAX_VALUE);
+            String selectQuery = "SELECT * FROM Sell_leg WHERE group_id = " + Integer.toString(group_id);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery(selectQuery);
+                if (resultSet.next()) {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return group_id;
     }
 
     private static void cancel(OracleConnection connection, Scanner scanner, int acc_id, String username) {
@@ -924,6 +979,9 @@ public class TraderInterface {
                         e.printStackTrace();
                     }
                 }
+                else{
+                    return;
+                }
                 String insertIntoCancel = "INSERT INTO Cancels (tid, ptid) VALUES (?, ?)";
                 int transaction_id = createTransaction(connection, username, 0);
                 try (PreparedStatement preparedStatement = connection.prepareStatement(insertIntoCancel)) {
@@ -948,6 +1006,8 @@ public class TraderInterface {
         catch(SQLException e){
             System.out.println("ERROR: Not a Buy Transaction");
         }
+
+        
         String selectFromSells = "SELECT * FROM Sell WHERE tid = " + Integer.toString(last_tid);
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectFromSells);
@@ -984,6 +1044,9 @@ public class TraderInterface {
                         System.out.println("ERROR: Update Bought_Stock failed.");
                         e.printStackTrace();
                     }
+                }
+                else{
+                    return;
                 }
                 String insertIntoCancel = "INSERT INTO Cancels (tid, ptid) VALUES (?, ?)";
                 int transaction_id = createTransaction(connection, username, 0);
@@ -1511,6 +1574,22 @@ public class TraderInterface {
             e.printStackTrace();
         }
 
+    }
+
+    public static void listAllStockAccounts(OracleConnection connection, String username){
+        String selectQuery = "SELECT * FROM Stock_Account WHERE username = " + "'" + username + "'";
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            while(resultSet.next()){
+                System.out.println("Symbol: " + resultSet.getString("symbol"));
+                System.out.println("Number of Shares: " + resultSet.getInt("num_share"));
+                System.out.println("Balance: " + resultSet.getDouble("balance_share"));
+                System.out.println("=======================================================================================================================");
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
     }
     
 
