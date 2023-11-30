@@ -1352,6 +1352,7 @@ public class TraderInterface {
                 if (resultSet.next()) {
                     System.out.println("Transaction Type: Cancel");
                     System.out.println("Previous Transaction Cancelled");
+                    System.out.println("Previous Transaction ID: " + resultSet.getString("ptid"));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -1478,7 +1479,7 @@ public class TraderInterface {
         return (false);
     }
 
-    
+    /* 
     public static ArrayList<Integer> getUserTransactions(OracleConnection connection, String username) {
         ArrayList<Integer> transactions = new ArrayList<Integer>();
         String selectQuery = "SELECT * FROM Commits WHERE username = " + "'" + username + "'";
@@ -1496,6 +1497,28 @@ public class TraderInterface {
 
         return (transactions);
     }
+    */
+
+    public static ArrayList<Integer> getUserTransactions(OracleConnection connection, String username) {
+        ArrayList<Integer> transactions = new ArrayList<>();
+        String selectQuery = "SELECT c.tid FROM Commits c "
+                + "JOIN Transactions t ON c.tid = t.tid "
+                + "WHERE c.username = '" + username + "' "
+                + "ORDER BY t.date_executed";
+    
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            while (resultSet.next()) {
+                transactions.add(resultSet.getInt("tid"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Handle any exceptions that may occur during database access
+        }
+    
+        return transactions;
+    }
+    
 
     private static void listAllReviews(OracleConnection connection, Scanner scanner){
         System.out.println("List all Reviews for Movie option selected.");
