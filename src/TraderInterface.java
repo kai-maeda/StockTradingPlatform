@@ -744,6 +744,7 @@ public class TraderInterface {
                     catch(SQLException e){
                         e.printStackTrace();
                     }
+                    removeEmptyBoughtStock(connection);
                 //}
             }
             else{
@@ -980,6 +981,7 @@ public class TraderInterface {
                         System.out.println("ERROR: Update Bought_Stock failed.");
                         e.printStackTrace();
                     }
+                    removeEmptyBoughtStock(connection);
                 }
                 else{
                     return;
@@ -1633,6 +1635,31 @@ public class TraderInterface {
                 System.out.println("Number of Shares: " + resultSet.getInt("num_share"));
                 System.out.println("Balance: " + resultSet.getDouble("balance_share"));
                 System.out.println("=======================================================================================================================");
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeEmptyBoughtStock(OracleConnection connection){
+        String selectQuery = "SELECT * FROM Bought_Stock WHERE shares_bought = 0";
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            while(resultSet.next()){
+                String deleteQuery = "DELETE FROM Bought_Stock WHERE username = " + "'" + resultSet.getString("username") + "'" + " AND symbol = " + "'" + resultSet.getString("symbol") + "' AND buy_price = " + Double.toString(resultSet.getDouble("buy_price"));
+                try(Statement statement2 = connection.createStatement()){
+                    int rowsAffected = statement2.executeUpdate(deleteQuery);
+                    if(rowsAffected > 0){
+                        System.out.println("Deleted Bought_Stock successful!");
+                    }
+                    else{
+                        System.out.println("Delete Bought_Stock failed.");
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
             }
         }
         catch(SQLException e){
