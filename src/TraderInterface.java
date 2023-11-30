@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
@@ -1146,7 +1147,10 @@ public class TraderInterface {
     private static void showBalance(OracleConnection connection, int acc_id) {
         // Implement show balance logic
         System.out.println("Show Balance option selected.");
-        System.out.println("Your current balance is: " + getBalance(connection, acc_id));
+        double balance = getBalance(connection, acc_id);
+        DecimalFormat df = new DecimalFormat("#.##");
+        String formattedNumber = df.format(balance);
+        System.out.println("Your current balance is: " + formattedNumber);
     }
 
     private static double getBalance(OracleConnection connection, int acc_id) {
