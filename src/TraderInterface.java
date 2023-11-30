@@ -695,11 +695,13 @@ public class TraderInterface {
         }
     }
 
+    /* 
     if(total > getBalance(connection, acc_id)){
         System.out.println("You do not have enough money to sell these shares.");
         System.out.println("Exiting Sell.");
         return;
     }
+    */
 
     //alter Bought_Stock table
 
@@ -821,7 +823,7 @@ public class TraderInterface {
             e.printStackTrace();
         }
         //String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(total) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
-        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numShares) + ", balance_share = balance_share - " + Double.toString(numSharesToSell * sell_at_buy_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
+        String updateQuery = "UPDATE Stock_Account SET num_share = num_share - " + Integer.toString(numSharesToSell) + ", balance_share = balance_share - " + Double.toString(numSharesToSell * sell_at_buy_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateQuery);
                         if (rowsAffected > 0) {
@@ -1032,8 +1034,8 @@ public class TraderInterface {
                         e.printStackTrace();
                     }
 
-                    String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(shares) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_price);
-                    try (Statement statement2 = connection.createStatement()) {
+                    //String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(shares) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_price);
+                    /*try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateBought_Stock);
                         if (rowsAffected > 0) {
                             System.out.println("Update Bought_Stock successful!");
@@ -1043,11 +1045,57 @@ public class TraderInterface {
                     } catch (SQLException e) {
                         System.out.println("ERROR: Update Bought_Stock failed.");
                         e.printStackTrace();
-                    }
+                    }*/
+
                 }
                 else{
                     return;
                 }
+
+
+                String get_group_id_query = "SELECT * FROM Sell_leg WHERE tid = " + Integer.toString(last_tid);
+                int group_id = 0;
+                try(Statement statement2 = connection.createStatement()){
+                    ResultSet resultSet2 = statement2.executeQuery(get_group_id_query);
+                    if(resultSet2.next()){
+                        group_id = resultSet2.getInt("group_id");
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
+
+                String selectFromSellLeg = "SELECT * FROM Sell_leg WHERE group_id = " + Integer.toString(group_id);
+                try(Statement statement2 = connection.createStatement()){
+                    ResultSet resultSet2 = statement2.executeQuery(selectFromSellLeg);
+                    while(resultSet2.next()){
+                        int shares_bought = resultSet2.getInt("shares");
+                        double bought_price = resultSet2.getDouble("bought_price");
+                        createBought_Stock(connection, shares_bought, symbol, bought_price, username);
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
+                String deleteFromSellLeg = "DELETE FROM Sell_leg WHERE group_id = " + Integer.toString(group_id);
+                try(Statement statement2 = connection.createStatement()){
+                    int rowsAffected = statement2.executeUpdate(deleteFromSellLeg);
+                    if(rowsAffected > 0){
+                        System.out.println("Deleted Sell_leg successful!");
+                    }
+                    else{
+                        System.out.println("Delete Sell_leg failed.");
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
+
+
+
+
+
+
                 String insertIntoCancel = "INSERT INTO Cancels (tid, ptid) VALUES (?, ?)";
                 int transaction_id = createTransaction(connection, username, 0);
                 try (PreparedStatement preparedStatement = connection.prepareStatement(insertIntoCancel)) {
