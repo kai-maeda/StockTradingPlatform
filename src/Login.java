@@ -129,9 +129,16 @@ public class Login {
             System.out.print("Enter state_id: ");
             String stateId = scanner.nextLine();
 
-            System.out.print("Enter tax_id: ");
-            int taxId = scanner.nextInt();
-            scanner.nextLine(); // Consume the newline
+            int taxId;
+        while (true) {
+            try {
+                System.out.print("Enter tax_id: ");
+                taxId = Integer.parseInt(scanner.nextLine());
+                break; // Exit the loop if a valid integer is entered
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid integer for tax_id.");
+            }
+        }
 
             System.out.print("Enter cname: ");
             String cname = scanner.nextLine();
