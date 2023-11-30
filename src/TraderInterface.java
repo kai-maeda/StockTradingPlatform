@@ -1216,6 +1216,7 @@ public class TraderInterface {
         System.out.println("Show Transaction History option selected.");
         ArrayList<Integer> transactions = new ArrayList<Integer>();
         transactions = getUserTransactions(connection, username);
+        String 
         for (int i = 0; i < transactions.size(); i++) {
             int transaction_id = transactions.get(i);
             String selectQuery = "SELECT * FROM Transactions WHERE tid = " + Integer.toString(transaction_id);
