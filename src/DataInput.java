@@ -17,7 +17,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Random;
+import java.sql.Timestamp;
 import java.sql.Date;
+
+// import System
 
 
 public class DataInput {
@@ -217,7 +220,7 @@ public class DataInput {
     }
     public static void fillTemp_Money(OracleConnection connection, int acc_id) {
         String selectQuery = "SELECT * FROM Market_Account, current_time WHERE acc_id = " + acc_id;
-        String insertQuery = "INSERT INTO Temp_Money (acc_id, temp_balance, balance_date, bid) VALUES (?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO Temp_Money (acc_id, temp_balance, balance_date, bid, time_order) VALUES (?, ?, ?, ?, ?)";
         int bid = 0;
         while(true){
             Random random = new Random();
@@ -237,10 +240,13 @@ public class DataInput {
                 java.sql.Date curr_date = resultSet.getDate("curr_date");
                 float balance = resultSet.getFloat("balance");
                 try(PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)){
+                    long time_order = System.currentTimeMillis();
+                    Date current_date = new Date(time_order);
                     preparedStatement.setInt(1, acc_id);
                     preparedStatement.setFloat(2, balance);
                     preparedStatement.setDate(3, curr_date);
                     preparedStatement.setInt(4, bid);
+                    preparedStatement.setDate(5, current_date);
                     preparedStatement.executeUpdate();
                 }
             }

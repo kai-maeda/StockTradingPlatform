@@ -147,12 +147,15 @@ public class ManagerInterface {
                                 e.printStackTrace();
                             }
                         }
-                        String insertQuery = "INSERT INTO Temp_Money (temp_balance, balance_date,acc_id, bid) VALUES (?,?,?,?)";
+                        String insertQuery = "INSERT INTO Temp_Money (temp_balance, balance_date,acc_id, bid, time_order) VALUES (?,?,?,?)";
                         try(PreparedStatement preparedStatement4 = connection.prepareStatement(insertQuery)){
+                            long time_order = System.currentTimeMillis();
+                            Date current_date = new Date(time_order);
                             preparedStatement4.setFloat(1, balance_results[1] + avg_balance * monthlyInterest);
                             preparedStatement4.setDate(2,clean_date);
                             preparedStatement4.setInt(3,acc_id);
                             preparedStatement4.setInt(4,bid);
+                            preparedStatement4.setDate(5,current_date);
                             preparedStatement4.executeUpdate();
                         }
                     }
@@ -430,7 +433,7 @@ public class ManagerInterface {
         LocalDate curr_date2 = LocalDate.parse(curr_date, formatter2);
         Month month1 = curr_date2.getMonth();
         String selectQuery = "SELECT T.* FROM Market_Account M, Temp_money T WHERE username = '" + username + 
-                            "' AND M.acc_id = T.acc_id ORDER BY T.balance_date DESC";
+                            "' AND M.acc_id = T.acc_id ORDER BY T.balance_date DESC, T.time_order DESC";
         String final_balance = "0";
         String initial_balance = "0";
         float temp_balance = 0;
