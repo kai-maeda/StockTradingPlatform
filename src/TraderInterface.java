@@ -1019,10 +1019,11 @@ public class TraderInterface {
                 int shares = resultSet.getInt("shares");
                 String symbol = resultSet.getString("symbol");
                 double sell_price = resultSet.getDouble("sell_price");
-                System.out.println("Your last transaction was a sell of " + shares + " shares of " + symbol + " at a price of " + sell_price);
+                System.out.println("Your last transaction was a Sell Transaction");
                 System.out.println("Would you like to cancel this transaction? Type Y to cancel, type anything else to exit.");
                 String answer = scanner.nextLine();
                 if(answer.equalsIgnoreCase("Y")){
+                    /* 
                     String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(shares) + ", balance_share = balance_share + " + Double.toString(shares * sell_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
                     try (Statement statement2 = connection.createStatement()) {
                         int rowsAffected = statement2.executeUpdate(updateStockAccount);
@@ -1035,6 +1036,7 @@ public class TraderInterface {
                         System.out.println("ERROR: Update Stock Account failed.");
                         e.printStackTrace();
                     }
+                    */
 
                     //String updateBought_Stock = "UPDATE Bought_Stock SET shares_bought = shares_bought + " + Integer.toString(shares) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "' AND buy_price = " + Double.toString(sell_price);
                     /*try (Statement statement2 = connection.createStatement()) {
@@ -1074,6 +1076,19 @@ public class TraderInterface {
                         int shares_bought = resultSet2.getInt("shares");
                         double bought_price = resultSet2.getDouble("bought_price");
                         createBought_Stock(connection, shares_bought, symbol, bought_price, username);
+                        //String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(shares) + ", balance_share = balance_share + " + Double.toString(shares * sell_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
+                        String updateStockAccount = "UPDATE Stock_Account SET num_share = num_share + " + Integer.toString(shares_bought) + ", balance_share = balance_share + " + Double.toString(shares_bought * bought_price) + " WHERE username = " + "'" + username + "'" + " AND symbol = " + "'" + symbol + "'";
+                        try (Statement statement3 = connection.createStatement()) {
+                            int rowsAffected = statement3.executeUpdate(updateStockAccount);
+                            if (rowsAffected > 0) {
+                                System.out.println("Update Stock Account successful!");
+                            } else {
+                                System.out.println("Update Stock Account failed.");
+                            }
+                        } catch (SQLException e) {
+                            System.out.println("ERROR: Update Stock Account failed.");
+                            e.printStackTrace();
+                        }
                     }
                 }
                 catch(SQLException e){
@@ -1370,6 +1385,12 @@ public class TraderInterface {
             if(resultSet.next()) {
                 System.out.println("Actor Name: " + resultSet.getString("actor_name"));
                 System.out.println("Date of Birth: " + resultSet.getString("date_of_birth").substring(0, 10));
+                // Check if closing_price is null
+    if (resultSet.getObject("closing_price") == null) {
+        System.out.println("Closing Price: N/A");
+    } else {
+        System.out.println("Closing Price: " + resultSet.getDouble("closing_price"));
+    }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1627,13 +1648,15 @@ public class TraderInterface {
     }
 
     public static void listAllStockAccounts(OracleConnection connection, String username){
+        clearStockAccountsWithZero(connection);
         String selectQuery = "SELECT * FROM Stock_Account WHERE username = " + "'" + username + "'";
         try(Statement statement = connection.createStatement()){
             ResultSet resultSet = statement.executeQuery(selectQuery);
             while(resultSet.next()){
                 System.out.println("Symbol: " + resultSet.getString("symbol"));
                 System.out.println("Number of Shares: " + resultSet.getInt("num_share"));
-                System.out.println("Balance: " + resultSet.getDouble("balance_share"));
+                System.out.println("Amount spent (not value): " + resultSet.getDouble("balance_share"));
+                System.out.println("Value of shares: " + getStockPrice(connection, resultSet.getString("symbol")) * resultSet.getInt("num_share"));
                 System.out.println("=======================================================================================================================");
             }
         }
@@ -1655,6 +1678,31 @@ public class TraderInterface {
                     }
                     else{
                         System.out.println("Delete Bought_Stock failed.");
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void clearStockAccountsWithZero(OracleConnection connection){
+        String selectQuery = "SELECT * FROM Stock_Account WHERE num_share = 0";
+        try(Statement statement = connection.createStatement()){
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+            while(resultSet.next()){
+                String deleteQuery = "DELETE FROM Stock_Account WHERE username = " + "'" + resultSet.getString("username") + "'" + " AND symbol = " + "'" + resultSet.getString("symbol") + "'";
+                try(Statement statement2 = connection.createStatement()){
+                    int rowsAffected = statement2.executeUpdate(deleteQuery);
+                    if(rowsAffected > 0){
+                        System.out.println("Deleted Stock_Account successful!");
+                    }
+                    else{
+                        System.out.println("Delete Stock_Account failed.");
                     }
                 }
                 catch(SQLException e){
