@@ -870,6 +870,7 @@ public class TraderInterface {
         }
     }
 
+    /* 
     public static int generateRandomSellGroupBy(OracleConnection connection){
         int group_id = 0;
         while(true){
@@ -890,6 +891,7 @@ public class TraderInterface {
         }
         return group_id;
     }
+    */
 
     public static int generateRandomSellLegGroupBy(OracleConnection connection){
         int group_id = 0;
