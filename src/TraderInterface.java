@@ -1046,6 +1046,7 @@ public class TraderInterface {
                     System.out.println("Error: Cancel Transaction failed.");
                 }
                 withdrawSQL(shares * sell_price, connection, acc_id, username);
+                withdrawSQL(20, connection, acc_id, username);
                 return;
             }
         } catch (SQLException e) {
