@@ -147,7 +147,7 @@ public class ManagerInterface {
                                 e.printStackTrace();
                             }
                         }
-                        String insertQuery = "INSERT INTO Temp_Money (temp_balance, balance_date,acc_id, bid, time_order) VALUES (?,?,?,?)";
+                        String insertQuery = "INSERT INTO Temp_Money (temp_balance, balance_date,acc_id, bid, time_order) VALUES (?,?,?,?,?)";
                         try(PreparedStatement preparedStatement4 = connection.prepareStatement(insertQuery)){
                             long time_order = System.currentTimeMillis();
                             Date current_date = new Date(time_order);
