@@ -104,14 +104,12 @@ public class Login {
                 try (Statement statement = connection.createStatement()) {
 
     
-                    ResultSet resultSet = statement.executeQuery(
-                        selectQuery
-                    );
+                    ResultSet resultSet = statement.executeQuery(selectQuery);
     
                     if (resultSet.next()) {
                         System.out.println("Authentication successful!");
                         System.out.println("Welcome, " + resultSet.getString("cname") + "!");
-                        ManagerInterface.parentFunction(connection, resultSet.getInt("tax_id"));
+                        ManagerInterface.parentFunction(connection, resultSet.getString("username").trim());
                     } else {
                         System.out.println("Authentication failed. Please check your username and password.");
                     }

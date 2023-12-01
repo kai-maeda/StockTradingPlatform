@@ -20,7 +20,7 @@ import java.sql.Date;
 
 
 public class ManagerInterface {
-    public static void parentFunction(OracleConnection connection, int username) {
+    public static void parentFunction(OracleConnection connection, String username) {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -71,7 +71,7 @@ public class ManagerInterface {
             }
         }
     }
-    public static void addInterest(OracleConnection connection, int username) {
+    public static void addInterest(OracleConnection connection, String username) {
         //need list of temp_money and initial balance and length of month
 
         Date clean_date = Demo.getDateSQLFriendly(connection);
