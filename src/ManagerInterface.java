@@ -102,7 +102,7 @@ public class ManagerInterface {
                     while(resultSet3.next()) {
                         float avg_balance = 0;
                         int acc_id = resultSet3.getInt("acc_id");
-                        String acc_username = resultSet3.getString("username");
+                        String acc_username = resultSet3.getString("username").trim();
                         int tid = TraderInterface.createTransaction(connection, acc_username,1);
                         String selectQuery4 = "SELECT T.* FROM Market_Account M, Temp_money T WHERE M.acc_id = T.acc_id AND M.acc_id = " + acc_id + 
                                                 " AND EXTRACT(MONTH FROM T.balance_date) = EXTRACT(MONTH FROM TO_DATE('" + curr_date2 + "', 'yyyy-mm-dd')) ORDER BY T.balance_date DESC";
